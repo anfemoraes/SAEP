@@ -1,0 +1,107 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Usuario {
+  id                String         @id @default(cuid())
+  email             String         @unique
+  senha             String
+  role              Role           @default(USUARIO)
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+  
+  matrizesCriadas   Matriz[]       @relation("Criador")
+  matrizesAvaliadas Matriz[]       @relation("Avaliador")
+  logs              Log[]
+}
+
+model Matriz {
+  id                String         @id @default(cuid())
+  nome              String
+  oque              String
+  porque            String
+  como              String
+  quando            String
+  onde              String
+  quanto            String
+  impacto           Impacto        @default(MEDIO)
+  observacao        String?
+  percentual        Int            @default(0)
+  status            Status         @default(RASCUNHO)
+  comentarioComite  String?
+  
+  criadoPorId       String
+  criadoPor         Usuario        @relation("Criador", fields: [criadoPorId], references: [id])
+  avaliadoPorId     String?
+  avaliadoPor       Usuario?       @relation("Avaliador", fields: [avaliadoPorId], references: [id])
+  
+  acoes             AcoesMatriz[]
+  dataCriacao       DateTime       @default(now())
+  dataAvaliacao     DateTime?
+  updatedAt         DateTime       @updatedAt
+}
+
+model AcoesMatriz {
+  id          String   @id @default(cuid())
+  matrizId    String
+  matriz      Matriz   @relation(fields: [matrizId], references: [id])
+  acaoId      String
+  acao        Acao     @relation(fields: [acaoId], references: [id])
+}
+
+model Acao {
+  id              String         @id
+  og              String
+  lae             String
+  diretriz        String
+  prazo           Prazo
+  setor           String
+  meta            String
+  indicador       String
+  restricoes      String?
+  linhaPlanilha   Int
+  responsavel     String?
+  dadosIncompletos String[]
+  
+  matrizes        AcoesMatriz[]
+}
+
+model Log {
+  id          String   @id @default(cuid())
+  usuarioId   String
+  usuario     Usuario  @relation(fields: [usuarioId], references: [id])
+  acao        String
+  detalhes    String?
+  ip          String?
+  createdAt   DateTime @default(now())
+}
+
+enum Role {
+  USUARIO
+  COMITE
+  ADMIN
+}
+
+enum Status {
+  RASCUNHO
+  ENVIADO
+  APROVADO
+  PENDENTE
+}
+
+enum Impacto {
+  BAIXO
+  MEDIO
+  ALTO
+}
+
+enum Prazo {
+  CURTO_PRAZO
+  MEDIO_PRAZO
+  LONGO_PRAZO
+}
