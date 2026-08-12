@@ -53,7 +53,7 @@ export function ConsultarMatrizes({ usuarioLogado }) {
                 <div style={{ display: 'flex', gap: '0.8rem', alignItems: 'center' }}>
                     <input 
                         type="text" 
-                        placeholder="🔍 Buscar por ID, nome ou autor..." 
+                        placeholder=" Buscar por ID, nome ou autor..." 
                         value={termoBusca}
                         onChange={(e) => setTermoBusca(e.target.value)}
                         style={{ padding: '0.5rem 1rem', width: '250px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '0.9rem' }}

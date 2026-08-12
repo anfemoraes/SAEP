@@ -1,4 +1,3 @@
-// src/pages/FormularioMatriz.jsx
 import React, { useState, useEffect } from 'react';
 import { carregarBanco, salvarBanco } from '../services/storage';
 import Swal from 'sweetalert2';
@@ -61,6 +60,20 @@ export function FormularioMatriz({ acoesSelecionadas, usuarioLogado, onVoltar, o
         return nome.trim() && oque.trim() && porque.trim() && como.trim() && quando && onde.trim() && quanto && impacto;
     };
 
+    // 🆕 FUNÇÃO PARA LIMPAR O FORMULÁRIO
+    const limparFormulario = () => {
+        setNome('');
+        setOque('');
+        setPorque('');
+        setComo('');
+        setQuando('');
+        setOnde('');
+        setQuanto('');
+        setImpacto('medio');
+        setObservacao('');
+        setPercentual('0');
+    };
+
     const handleSalvarRascunho = () => {
         if (!validarFormulario()) {
             Swal.fire({
@@ -102,11 +115,13 @@ export function FormularioMatriz({ acoesSelecionadas, usuarioLogado, onVoltar, o
         Swal.fire({
             icon: 'success',
             title: 'Rascunho salvo!',
-            text: `Registro ${novoSavedId(novoRegistro.id)} salvo com sucesso. Você pode editá-lo ou enviá-lo depois.`,
+            text: `Registro ${novoRegistro.id} salvo com sucesso. Você pode editá-lo ou enviá-lo depois.`,
             timer: 2200,
             showConfirmButton: false
         });
 
+        // 🆕 LIMPA O FORMULÁRIO APÓS SALVAR
+        limparFormulario();
         onSalvoSucesso();
     };
 
@@ -173,6 +188,8 @@ export function FormularioMatriz({ acoesSelecionadas, usuarioLogado, onVoltar, o
             showConfirmButton: false
         });
 
+        // 🆕 LIMPA O FORMULÁRIO APÓS ENVIAR
+        limparFormulario();
         onSalvoSucesso();
     };
 
@@ -185,7 +202,9 @@ export function FormularioMatriz({ acoesSelecionadas, usuarioLogado, onVoltar, o
 
             {/* Visor das Ações Vinculadas */}
             <div style={{ background: '#f8fafc', padding: '1rem', borderRadius: '8px', border: '1px solid #e2e8f0', marginBottom: '1.5rem' }}>
-                <strong style={{ fontSize: '0.85rem', color: '#64748b', display: 'block', marginBottom: '6px' }}>Diretrizes Estratégicas Vinculadas ({acoesSelecionadas.length}):</strong>
+                <strong style={{ fontSize: '0.85rem', color: '#64748b', display: 'block', marginBottom: '6px' }}>
+                    Diretrizes Estratégicas Vinculadas ({acoesSelecionadas.length}):
+                </strong>
                 {acoesSelecionadas.map(a => (
                     <div key={`${a.id}-${a.linhaPlanilha}`} style={{ fontSize: '0.9rem', color: '#1e293b', marginBottom: '4px' }}>
                         ✓ <strong>{a.id}</strong> - {a.diretriz}
@@ -262,9 +281,7 @@ export function FormularioMatriz({ acoesSelecionadas, usuarioLogado, onVoltar, o
     );
 }
 
-function novosavedId(id) {
-    return id;
-}
+// 🗑️ REMOVIDA a função inútil novoSavedId
 
 const estiloLabel = {
     display: 'block',
