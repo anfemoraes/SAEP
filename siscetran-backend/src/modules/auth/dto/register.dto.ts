@@ -1,44 +1,33 @@
-import { Controller, Post, Body, Get, UseGuards, Request } from '@nestjs/common';
-import { AuthService } from './auth.service';
-import { LoginDto } from './dto/login.dto';
-import { RegisterDto } from './dto/register.dto';
-import { Public } from '../../common/decorators/public.decorator';
-import { JwtGuard } from '../../common/guards/jwt.guard';
-import { Roles } from '../../common/decorators/roles.decorator';
+import { ApiProperty } from '@nestjs/swagger';
+import { IsEmail, IsString, MinLength, IsOptional, IsEnum, Matches } from 'class-validator';
 import { Role } from '@prisma/client';
-import { ApiBearerAuth, ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 
-@ApiTags('auth')
-@Controller('auth')
-export class AuthController {
-  constructor(private authService: AuthService) {}
+export class RegisterDto {
+  @ApiProperty({ example: 'novo@email.com' })
+  @IsEmail()
+  email: string;
 
-  @Public()
-  @Post('login')
-  @ApiOperation({ summary: 'Login do usuário' })
-  @ApiResponse({ status: 200, description: 'Login realizado com sucesso' })
-  @ApiResponse({ status: 401, description: 'Credenciais inválidas' })
-  async login(@Body() loginDto: LoginDto) {
-    return this.authService.login(loginDto);
-  }
+  @ApiProperty({
+    example: 'Senha@123',
+    description: 'Mínimo 8 caracteres, com ao menos 1 letra maiúscula e 1 número',
+  })
+  @IsString()
+  @MinLength(8, { message: 'A senha deve ter no mínimo 8 caracteres' })
+  @Matches(/[A-Z]/, { message: 'A senha deve conter ao menos uma letra maiúscula' })
+  @Matches(/[0-9]/, { message: 'A senha deve conter ao menos um número' })
+  senha: string;
 
-  @Public()
-  @Post('register')
-  @Roles(Role.ADMIN)
-  @ApiOperation({ summary: 'Registrar novo usuário (admin apenas)' })
-  @ApiResponse({ status: 201, description: 'Usuário criado com sucesso' })
-  @ApiResponse({ status: 409, description: 'Usuário já existe' })
-  async register(@Body() registerDto: RegisterDto) {
-    return this.authService.register(registerDto);
-  }
+  @ApiProperty({ enum: Role, default: Role.USUARIO, required: false })
+  @IsOptional()
+  @IsEnum(Role)
+  role?: Role;
 
-  @UseGuards(JwtGuard)
-  @Get('profile')
-  @ApiBearerAuth()
-  @ApiOperation({ summary: 'Obter perfil do usuário logado' })
-  @ApiResponse({ status: 200, description: 'Perfil retornado com sucesso' })
-  @ApiResponse({ status: 401, description: 'Não autenticado' })
-  async getProfile(@Request() req) {
-    return this.authService.getProfile(req.user.id);
-  }
+  @ApiProperty({
+    example: 'CTSIST',
+    required: false,
+    description: 'Setor do usuário. Obrigatório para USUARIO e ADMIN_SETOR.',
+  })
+  @IsOptional()
+  @IsString()
+  setor?: string;
 }

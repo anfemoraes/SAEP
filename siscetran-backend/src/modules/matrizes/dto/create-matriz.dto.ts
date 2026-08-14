@@ -47,24 +47,24 @@ export class CreateMatrizDto {
   @IsNotEmpty()
   quanto: string;
 
-  @ApiProperty({ enum: Impacto, default: Impacto.MEDIO })
+  @ApiProperty({ enum: Impacto, default: Impacto.MEDIO, required: false })
   @IsEnum(Impacto)
   @IsOptional()
   impacto?: Impacto;
 
-  @ApiProperty({ example: 'Observações adicionais' })
+  @ApiProperty({ example: 'Observações adicionais', required: false })
   @IsString()
   @IsOptional()
   observacao?: string;
 
-  @ApiProperty({ example: 10 })
+  @ApiProperty({ example: 10, required: false })
   @IsNumber()
   @Min(0)
   @Max(100)
   @IsOptional()
   percentual?: number;
 
-  @ApiProperty({ example: ['AE 1.1.1.1', 'AE 1.1.1.2'] })
+  @ApiProperty({ example: ['AE 1.1.1.1', 'AE 1.1.1.2'], required: false })
   @IsArray()
   @IsOptional()
   acoesIds?: string[];

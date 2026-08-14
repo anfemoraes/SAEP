@@ -1,145 +1,119 @@
 // src/pages/Dashboard.jsx
-import React, { useState, useEffect } from 'react';
-import { carregarBanco } from '../services/storage';
+import React, { useState, useEffect, useRef } from 'react';
+import { obterKpis, obterGraficos } from '../services/dashboard';
+import { ApiError } from '../services/api';
 import { Chart } from 'chart.js/auto';
 
-export function Dashboard({ usuarioLogado }) {
-    const [registros, setRegistros] = useState([]);
-    const [kpis, setKpis] = useState({
-        total: 0,
-        aprovados: 0,
-        pendentes: 0,
-        rascunhos: 0
-    });
+export function Dashboard() {
+    const [kpis, setKpis] = useState({ total: 0, aprovados: 0, pendentes: 0, enviados: 0, rascunhos: 0, percentualMedio: 0 });
+    const [graficos, setGraficos] = useState(null);
+    const [carregando, setCarregando] = useState(true);
+    const [erro, setErro] = useState(null);
+    const chartRef = useRef(null);
+    const chartInstance = useRef(null);
 
     useEffect(() => {
-        const db = carregarBanco();
-        setRegistros(db.registros || []);
-        calcularKPIs(db.registros || []);
+        let cancelado = false;
+        (async () => {
+            try {
+                const [kpisResp, graficosResp] = await Promise.all([obterKpis(), obterGraficos()]);
+                if (!cancelado) {
+                    setKpis(kpisResp);
+                    setGraficos(graficosResp);
+                }
+            } catch (err) {
+                if (!cancelado) setErro(err instanceof ApiError ? err.message : 'Não foi possível carregar o dashboard.');
+            } finally {
+                if (!cancelado) setCarregando(false);
+            }
+        })();
+        return () => { cancelado = true; };
     }, []);
 
     useEffect(() => {
-        if (registros.length > 0) {
-            renderizarGraficos();
+        if (!graficos || !chartRef.current) return;
+
+        if (chartInstance.current) {
+            chartInstance.current.destroy();
         }
-    }, [registros]);
 
-    const calcularKPIs = (dados) => {
-        const total = dados.length;
-        const aprovados = dados.filter(r => r.status === 'Aprovado').length;
-        const pendentes = dados.filter(r => r.status === 'Pendente').length;
-        const rascunhos = dados.filter(r => r.status === 'Rascunho').length;
+        const contagemPorStatus = {};
+        (graficos.status || []).forEach(item => {
+            contagemPorStatus[item.status] = item._count?.status || 0;
+        });
 
-        setKpis({ total, aprovados, pendentes, rascunhos });
-    };
+        chartInstance.current = new Chart(chartRef.current, {
+            type: 'doughnut',
+            data: {
+                labels: ['Aprovadas', 'Pendentes', 'Rascunhos', 'Enviadas'],
+                datasets: [{
+                    data: [
+                        contagemPorStatus['APROVADO'] || 0,
+                        contagemPorStatus['PENDENTE'] || 0,
+                        contagemPorStatus['RASCUNHO'] || 0,
+                        contagemPorStatus['ENVIADO'] || 0,
+                    ],
+                    backgroundColor: ['#22c55e', '#ef4444', '#f59e0b', '#3b82f6']
+                }]
+            },
+            options: { responsive: true, plugins: { legend: { position: 'bottom' } } }
+        });
 
-    const renderizarGraficos = () => {
-        // Gráfico de Status
-        const ctxStatus = document.getElementById('chartStatus');
-        if (ctxStatus) {
-            new Chart(ctxStatus, {
-                type: 'doughnut',
-                data: {
-                    labels: ['Aprovados', 'Pendentes', 'Rascunhos', 'Enviados'],
-                    datasets: [{
-                        data: [
-                            registros.filter(r => r.status === 'Aprovado').length,
-                            registros.filter(r => r.status === 'Pendente').length,
-                            registros.filter(r => r.status === 'Rascunho').length,
-                            registros.filter(r => r.status === 'Enviado').length
-                        ],
-                        backgroundColor: ['#22c55e', '#ef4444', '#f59e0b', '#3b82f6']
-                    }]
-                },
-                options: { responsive: true, plugins: { legend: { position: 'bottom' } } }
-            });
-        }
-    };
+        return () => {
+            if (chartInstance.current) chartInstance.current.destroy();
+        };
+    }, [graficos]);
 
     return (
         <div style={{ padding: '2rem', maxWidth: '1200px', margin: '0 auto' }}>
             <h2 style={{ color: '#1e293b', marginBottom: '1.5rem' }}>Dashboard do PETRANS</h2>
-            
-            {/* KPIs */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1rem', marginBottom: '2rem' }}>
-                <div style={{ background: '#fff', padding: '1rem', borderRadius: '8px', border: '1px solid #e2e8f0', textAlign: 'center' }}>
-                    <h3 style={{ color: '#64748b', fontSize: '0.9rem', margin: 0 }}>Total de Matrizes</h3>
-                    <p style={{ fontSize: '2rem', fontWeight: 'bold', color: '#1e293b', margin: '0.5rem 0' }}>{kpis.total}</p>
-                </div>
-                <div style={{ background: '#fff', padding: '1rem', borderRadius: '8px', border: '1px solid #e2e8f0', textAlign: 'center' }}>
-                    <h3 style={{ color: '#64748b', fontSize: '0.9rem', margin: 0 }}>Aprovadas</h3>
-                    <p style={{ fontSize: '2rem', fontWeight: 'bold', color: '#22c55e', margin: '0.5rem 0' }}>{kpis.aprovados}</p>
-                </div>
-                <div style={{ background: '#fff', padding: '1rem', borderRadius: '8px', border: '1px solid #e2e8f0', textAlign: 'center' }}>
-                    <h3 style={{ color: '#64748b', fontSize: '0.9rem', margin: 0 }}>Pendentes</h3>
-                    <p style={{ fontSize: '2rem', fontWeight: 'bold', color: '#ef4444', margin: '0.5rem 0' }}>{kpis.pendentes}</p>
-                </div>
-                <div style={{ background: '#fff', padding: '1rem', borderRadius: '8px', border: '1px solid #e2e8f0', textAlign: 'center' }}>
-                    <h3 style={{ color: '#64748b', fontSize: '0.9rem', margin: 0 }}>Rascunhos</h3>
-                    <p style={{ fontSize: '2rem', fontWeight: 'bold', color: '#f59e0b', margin: '0.5rem 0' }}>{kpis.rascunhos}</p>
-                </div>
-            </div>
 
-            {/* Gráficos */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem', marginBottom: '2rem' }}>
-                <div style={{ background: '#fff', padding: '1.5rem', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
-                    <h4 style={{ margin: '0 0 1rem 0', color: '#1e293b' }}>Status das Matrizes</h4>
-                    <canvas id="chartStatus" style={{ maxHeight: '300px', width: '100%' }}></canvas>
+            {erro && (
+                <div style={{ background: '#fee2e2', color: '#dc2626', padding: '1rem', borderRadius: '6px', marginBottom: '1rem' }}>
+                    ⚠️ {erro}
                 </div>
-                <div style={{ background: '#fff', padding: '1.5rem', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
-                    <h4 style={{ margin: '0 0 1rem 0', color: '#1e293b' }}>Progresso Médio</h4>
-                    <div style={{ textAlign: 'center', padding: '2rem' }}>
-                        <p style={{ fontSize: '3rem', fontWeight: 'bold', color: '#2563eb' }}>
-                            {registros.length > 0 
-                                ? Math.round(registros.reduce((acc, r) => acc + (r.percentual || 0), 0) / registros.length) 
-                                : 0}%
-                        </p>
-                        <p style={{ color: '#64748b' }}>Média de progresso das ações</p>
+            )}
+
+            {carregando ? (
+                <div style={{ padding: '3rem', textAlign: 'center', color: '#64748b' }}>Carregando dashboard...</div>
+            ) : (
+                <>
+                    {/* KPIs */}
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '1rem', marginBottom: '2rem' }}>
+                        <CardKpi titulo="Total de Matrizes" valor={kpis.total} cor="#1e293b" />
+                        <CardKpi titulo="Aprovadas" valor={kpis.aprovados} cor="#22c55e" />
+                        <CardKpi titulo="Enviadas" valor={kpis.enviados} cor="#0284c7" />
+                        <CardKpi titulo="Pendentes" valor={kpis.pendentes} cor="#ef4444" />
+                        <CardKpi titulo="Rascunhos" valor={kpis.rascunhos} cor="#f59e0b" />
                     </div>
-                </div>
-            </div>
 
-            {/* Últimas Matrizes */}
-            <div style={{ background: '#fff', borderRadius: '8px', border: '1px solid #e2e8f0', overflow: 'hidden' }}>
-                <div style={{ padding: '1rem', borderBottom: '1px solid #e2e8f0', background: '#f8fafc' }}>
-                    <h4 style={{ margin: 0, color: '#1e293b' }}>Últimas Matrizes Criadas</h4>
-                </div>
-                <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.9rem' }}>
-                    <thead>
-                        <tr style={{ background: '#f8fafc', borderBottom: '1px solid #e2e8f0' }}>
-                            <th style={{ padding: '12px' }}>Nome</th>
-                            <th style={{ padding: '12px' }}>Status</th>
-                            <th style={{ padding: '12px' }}>Progresso</th>
-                            <th style={{ padding: '12px' }}>Criado Por</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {registros.slice(0, 5).map(reg => (
-                            <tr key={reg.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
-                                <td style={{ padding: '12px', color: '#1e293b' }}>{reg.nome}</td>
-                                <td style={{ padding: '12px' }}>
-                                    <span style={{
-                                        padding: '4px 8px',
-                                        borderRadius: '4px',
-                                        fontSize: '0.75rem',
-                                        fontWeight: 'bold',
-                                        backgroundColor: reg.status === 'Aprovado' ? '#dcfce7' : 
-                                                       reg.status === 'Enviado' ? '#e0f2fe' : 
-                                                       reg.status === 'Pendente' ? '#fee2e2' : '#fef9c3',
-                                        color: reg.status === 'Aprovado' ? '#16a34a' : 
-                                               reg.status === 'Enviado' ? '#0284c7' : 
-                                               reg.status === 'Pendente' ? '#dc2626' : '#ca8a04'
-                                    }}>
-                                        {reg.status}
-                                    </span>
-                                </td>
-                                <td style={{ padding: '12px' }}>{reg.percentual || 0}%</td>
-                                <td style={{ padding: '12px', color: '#64748b' }}>{reg.criadoPor}</td>
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
-            </div>
+                    {/* Gráficos */}
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem', marginBottom: '2rem' }}>
+                        <div style={{ background: '#fff', padding: '1.5rem', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+                            <h4 style={{ margin: '0 0 1rem 0', color: '#1e293b' }}>Status das Matrizes</h4>
+                            <canvas ref={chartRef} style={{ maxHeight: '300px', width: '100%' }}></canvas>
+                        </div>
+                        <div style={{ background: '#fff', padding: '1.5rem', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+                            <h4 style={{ margin: '0 0 1rem 0', color: '#1e293b' }}>Progresso Médio</h4>
+                            <div style={{ textAlign: 'center', padding: '2rem' }}>
+                                <p style={{ fontSize: '3rem', fontWeight: 'bold', color: '#2563eb' }}>
+                                    {kpis.percentualMedio || 0}%
+                                </p>
+                                <p style={{ color: '#64748b' }}>Média de progresso das matrizes</p>
+                            </div>
+                        </div>
+                    </div>
+                </>
+            )}
+        </div>
+    );
+}
+
+function CardKpi({ titulo, valor, cor }) {
+    return (
+        <div style={{ background: '#fff', padding: '1rem', borderRadius: '8px', border: '1px solid #e2e8f0', textAlign: 'center' }}>
+            <h3 style={{ color: '#64748b', fontSize: '0.85rem', margin: 0 }}>{titulo}</h3>
+            <p style={{ fontSize: '2rem', fontWeight: 'bold', color: cor, margin: '0.5rem 0' }}>{valor}</p>
         </div>
     );
 }

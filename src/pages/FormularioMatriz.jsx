@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from 'react';
-import { carregarBanco, salvarBanco } from '../services/storage';
+import React, { useState } from 'react';
+import { criarMatriz, enviarParaComite } from '../services/matrizes';
+import { ApiError } from '../services/api';
 import Swal from 'sweetalert2';
 
 export function FormularioMatriz({ acoesSelecionadas, usuarioLogado, onVoltar, onSalvoSucesso }) {
@@ -10,19 +11,10 @@ export function FormularioMatriz({ acoesSelecionadas, usuarioLogado, onVoltar, o
     const [quando, setQuando] = useState('');
     const [onde, setOnde] = useState('');
     const [quanto, setQuanto] = useState('');
-    const [impacto, setImpacto] = useState('medio');
+    const [impacto, setImpacto] = useState('MEDIO');
     const [observacao, setObservacao] = useState('');
     const [percentual, setPercentual] = useState('0');
-
-    // Ao carregar, se houver ações selecionadas, pega o percentual padrão ou define 0
-    useEffect(() => {
-        if (acoesSelecionadas && acoesSelecionadas.length > 0) {
-            const primeiraAcao = acoesSelecionadas[0];
-            if (primeiraAcao.percentualDefinido !== undefined) {
-                setPercentual(primeiraAcao.percentualDefinido);
-            }
-        }
-    }, [acoesSelecionadas]);
+    const [salvando, setSalvando] = useState(false);
 
     // Máscara interativa para o campo "Quanto" (Moeda BRL)
     const handleQuantoChange = (e) => {
@@ -52,15 +44,10 @@ export function FormularioMatriz({ acoesSelecionadas, usuarioLogado, onVoltar, o
         }).format(value);
     };
 
-    const gerarID = () => {
-        return 'MAT-' + Math.random().toString(36).substring(2, 6).toUpperCase();
-    };
-
     const validarFormulario = () => {
         return nome.trim() && oque.trim() && porque.trim() && como.trim() && quando && onde.trim() && quanto && impacto;
     };
 
-    // 🆕 FUNÇÃO PARA LIMPAR O FORMULÁRIO
     const limparFormulario = () => {
         setNome('');
         setOque('');
@@ -69,12 +56,31 @@ export function FormularioMatriz({ acoesSelecionadas, usuarioLogado, onVoltar, o
         setQuando('');
         setOnde('');
         setQuanto('');
-        setImpacto('medio');
+        setImpacto('MEDIO');
         setObservacao('');
         setPercentual('0');
     };
 
-    const handleSalvarRascunho = () => {
+    const montarPayload = () => ({
+        nome,
+        oque,
+        porque,
+        como,
+        quando,
+        onde,
+        quanto: formatCurrency(parseCurrencyInput(quanto)),
+        impacto,
+        observacao,
+        percentual: parseFloat(percentual) || 0,
+        acoesIds: acoesSelecionadas.map(a => a.id),
+    });
+
+    const tratarErro = (err, tituloPadrao) => {
+        const mensagem = err instanceof ApiError ? err.message : tituloPadrao;
+        Swal.fire({ icon: 'error', title: 'Erro', text: mensagem, confirmButtonColor: '#2563eb' });
+    };
+
+    const handleSalvarRascunho = async () => {
         if (!validarFormulario()) {
             Swal.fire({
                 icon: 'warning',
@@ -85,44 +91,23 @@ export function FormularioMatriz({ acoesSelecionadas, usuarioLogado, onVoltar, o
             return;
         }
 
-        const db = carregarBanco();
-        const novoRegistro = {
-            id: gerarID(),
-            dataCriacao: new Date().toLocaleString(),
-            status: "Rascunho",
-            comentarioComite: "-",
-            criadoPor: usuarioLogado ? usuarioLogado.email : 'usuario@email.com',
-            acoesEstrategicas: acoesSelecionadas.map(a => ({
-                id: a.id,
-                linhaPlanilha: a.linhaPlanilha,
-                diretriz: a.diretriz
-            })),
-            nome,
-            oque,
-            porque,
-            como,
-            quando,
-            onde,
-            quanto: formatCurrency(parseCurrencyInput(quanto)),
-            impacto,
-            observacao,
-            percentual: parseFloat(percentual) || 0
-        };
-
-        db.registros.push(novoRegistro);
-        salvarBanco(db);
-
-        Swal.fire({
-            icon: 'success',
-            title: 'Rascunho salvo!',
-            text: `Registro ${novoRegistro.id} salvo com sucesso. Você pode editá-lo ou enviá-lo depois.`,
-            timer: 2200,
-            showConfirmButton: false
-        });
-
-        // 🆕 LIMPA O FORMULÁRIO APÓS SALVAR
-        limparFormulario();
-        onSalvoSucesso();
+        setSalvando(true);
+        try {
+            const matriz = await criarMatriz(montarPayload());
+            Swal.fire({
+                icon: 'success',
+                title: 'Rascunho salvo!',
+                text: `Registro ${matriz.id} salvo com sucesso. Você pode editá-lo ou enviá-lo depois em "Consultar".`,
+                timer: 2400,
+                showConfirmButton: false
+            });
+            limparFormulario();
+            onSalvoSucesso();
+        } catch (err) {
+            tratarErro(err, 'Não foi possível salvar o rascunho.');
+        } finally {
+            setSalvando(false);
+        }
     };
 
     const handleEnviarComite = async (e) => {
@@ -151,46 +136,28 @@ export function FormularioMatriz({ acoesSelecionadas, usuarioLogado, onVoltar, o
 
         if (!result.isConfirmed) return;
 
-        const db = carregarBanco();
-        const novoRegistro = {
-            id: gerarID(),
-            dataCriacao: new Date().toLocaleString(),
-            status: "Enviado",
-            comentarioComite: "-",
-            avaliadoPor: null,
-            dataAvaliacao: null,
-            criadoPor: usuarioLogado ? usuarioLogado.email : 'usuario@email.com',
-            acoesEstrategicas: acoesSelecionadas.map(a => ({
-                id: a.id,
-                linhaPlanilha: a.linhaPlanilha,
-                diretriz: a.diretriz
-            })),
-            nome,
-            oque,
-            porque,
-            como,
-            quando,
-            onde,
-            quanto: formatCurrency(parseCurrencyInput(quanto)),
-            impacto,
-            observacao,
-            percentual: parseFloat(percentual) || 0
-        };
+        setSalvando(true);
+        try {
+            // A matriz sempre começa como RASCUNHO na criação; "enviar" é uma
+            // segunda chamada que muda o status para ENVIADO.
+            const matriz = await criarMatriz(montarPayload());
+            await enviarParaComite(matriz.id);
 
-        db.registros.push(novoRegistro);
-        salvarBanco(db);
+            Swal.fire({
+                icon: 'success',
+                title: 'Enviado com sucesso!',
+                text: 'O detalhamento foi encaminhado para a análise dos conselheiros.',
+                timer: 2000,
+                showConfirmButton: false
+            });
 
-        Swal.fire({
-            icon: 'success',
-            title: 'Enviado com sucesso!',
-            text: 'O detalhamento foi encaminhado para a análise dos conselheiros.',
-            timer: 2000,
-            showConfirmButton: false
-        });
-
-        // 🆕 LIMPA O FORMULÁRIO APÓS ENVIAR
-        limparFormulario();
-        onSalvoSucesso();
+            limparFormulario();
+            onSalvoSucesso();
+        } catch (err) {
+            tratarErro(err, 'Não foi possível enviar para o comitê.');
+        } finally {
+            setSalvando(false);
+        }
     };
 
     return (
@@ -206,7 +173,7 @@ export function FormularioMatriz({ acoesSelecionadas, usuarioLogado, onVoltar, o
                     Diretrizes Estratégicas Vinculadas ({acoesSelecionadas.length}):
                 </strong>
                 {acoesSelecionadas.map(a => (
-                    <div key={`${a.id}-${a.linhaPlanilha}`} style={{ fontSize: '0.9rem', color: '#1e293b', marginBottom: '4px' }}>
+                    <div key={a.id} style={{ fontSize: '0.9rem', color: '#1e293b', marginBottom: '4px' }}>
                         ✓ <strong>{a.id}</strong> - {a.diretriz}
                     </div>
                 ))}
@@ -256,9 +223,9 @@ export function FormularioMatriz({ acoesSelecionadas, usuarioLogado, onVoltar, o
                     <div>
                         <label style={estiloLabel}>Impacto *</label>
                         <select value={impacto} onChange={(e) => setImpacto(e.target.value)} style={estiloInput}>
-                            <option value="baixo">Baixo</option>
-                            <option value="medio">Médio</option>
-                            <option value="alto">Alto</option>
+                            <option value="BAIXO">Baixo</option>
+                            <option value="MEDIO">Médio</option>
+                            <option value="ALTO">Alto</option>
                         </select>
                     </div>
                 </div>
@@ -269,19 +236,17 @@ export function FormularioMatriz({ acoesSelecionadas, usuarioLogado, onVoltar, o
                 </div>
 
                 <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '1rem' }}>
-                    <button type="button" onClick={handleSalvarRascunho} style={{ background: '#64748b', color: '#fff', border: 'none', padding: '0.7rem 1.2rem', borderRadius: '6px', fontWeight: 'bold', cursor: 'pointer' }}>
+                    <button type="button" onClick={handleSalvarRascunho} disabled={salvando} style={{ background: '#64748b', color: '#fff', border: 'none', padding: '0.7rem 1.2rem', borderRadius: '6px', fontWeight: 'bold', cursor: salvando ? 'wait' : 'pointer', opacity: salvando ? 0.7 : 1 }}>
                         Salvar Rascunho
                     </button>
-                    <button type="submit" style={{ background: '#2563eb', color: '#fff', border: 'none', padding: '0.7rem 1.5rem', borderRadius: '6px', fontWeight: 'bold', cursor: 'pointer' }}>
-                        Enviar para o Comitê
+                    <button type="submit" disabled={salvando} style={{ background: '#2563eb', color: '#fff', border: 'none', padding: '0.7rem 1.5rem', borderRadius: '6px', fontWeight: 'bold', cursor: salvando ? 'wait' : 'pointer', opacity: salvando ? 0.7 : 1 }}>
+                        {salvando ? 'Enviando...' : 'Enviar para o Comitê'}
                     </button>
                 </div>
             </form>
         </div>
     );
 }
-
-// 🗑️ REMOVIDA a função inútil novoSavedId
 
 const estiloLabel = {
     display: 'block',

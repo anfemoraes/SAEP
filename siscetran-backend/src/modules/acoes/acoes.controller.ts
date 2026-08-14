@@ -58,7 +58,7 @@ export class AcoesController {
   }
 
   @Post()
-  @Roles(Role.ADMIN)
+  @Roles(Role.ADMIN_GERAL)
   @ApiOperation({ summary: 'Criar nova ação (admin apenas)' })
   @ApiResponse({ status: 201, description: 'Ação criada com sucesso' })
   @ApiResponse({ status: 409, description: 'ID da ação já existe' })
@@ -67,19 +67,16 @@ export class AcoesController {
   }
 
   @Put(':id')
-  @Roles(Role.ADMIN)
+  @Roles(Role.ADMIN_GERAL)
   @ApiOperation({ summary: 'Atualizar ação (admin apenas)' })
   @ApiResponse({ status: 200, description: 'Ação atualizada' })
   @ApiResponse({ status: 404, description: 'Ação não encontrada' })
-  async update(
-    @Param('id') id: string,
-    @Body() updateAcaoDto: UpdateAcaoDto,
-  ) {
+  async update(@Param('id') id: string, @Body() updateAcaoDto: UpdateAcaoDto) {
     return this.acoesService.update(id, updateAcaoDto);
   }
 
   @Delete(':id')
-  @Roles(Role.ADMIN)
+  @Roles(Role.ADMIN_GERAL)
   @ApiOperation({ summary: 'Remover ação (admin apenas)' })
   @ApiResponse({ status: 204, description: 'Ação removida' })
   @ApiResponse({ status: 404, description: 'Ação não encontrada' })
@@ -89,7 +86,7 @@ export class AcoesController {
   }
 
   @Post('importar')
-  @Roles(Role.ADMIN)
+  @Roles(Role.ADMIN_GERAL)
   @ApiOperation({ summary: 'Importar ações em lote (admin apenas)' })
   @ApiResponse({ status: 201, description: 'Ações importadas com sucesso' })
   async importar(@Body() acoes: CreateAcaoDto[]) {

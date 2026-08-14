@@ -17,10 +17,12 @@ import { LogsModule } from './modules/logs/logs.module';
     ConfigModule.forRoot({
       isGlobal: true,
     }),
-    ThrottlerModule.forRoot({
-      ttl: 60,
-      limit: 100,
-    }),
+    ThrottlerModule.forRoot([
+      {
+        ttl: (Number(process.env.THROTTLE_TTL) || 60) * 1000,
+        limit: Number(process.env.THROTTLE_LIMIT) || 100,
+      },
+    ]),
     // Módulos
     AuthModule,
     UsuariosModule,

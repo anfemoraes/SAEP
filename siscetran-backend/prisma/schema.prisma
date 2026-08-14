@@ -12,12 +12,32 @@ model Usuario {
   email             String         @unique
   senha             String
   role              Role           @default(USUARIO)
+  setor             String?
+  ativo             Boolean        @default(true)
+  ultimaTrocaSenha  DateTime       @default(now())
+  resetToken        String?        @unique
+  resetTokenExpiry  DateTime?
   createdAt         DateTime       @default(now())
   updatedAt         DateTime       @updatedAt
   
   matrizesCriadas   Matriz[]       @relation("Criador")
   matrizesAvaliadas Matriz[]       @relation("Avaliador")
+  votos             Voto[]
   logs              Log[]
+}
+
+model Voto {
+  id          String    @id @default(cuid())
+  matrizId    String
+  matriz      Matriz    @relation(fields: [matrizId], references: [id], onDelete: Cascade)
+  usuarioId   String
+  usuario     Usuario   @relation(fields: [usuarioId], references: [id])
+  voto        TipoVoto
+  comentario  String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@unique([matrizId, usuarioId])
 }
 
 model Matriz {
@@ -41,6 +61,7 @@ model Matriz {
   avaliadoPor       Usuario?       @relation("Avaliador", fields: [avaliadoPorId], references: [id])
   
   acoes             AcoesMatriz[]
+  votos             Voto[]
   dataCriacao       DateTime       @default(now())
   dataAvaliacao     DateTime?
   updatedAt         DateTime       @updatedAt
@@ -49,18 +70,20 @@ model Matriz {
 model AcoesMatriz {
   id          String   @id @default(cuid())
   matrizId    String
-  matriz      Matriz   @relation(fields: [matrizId], references: [id])
+  matriz      Matriz   @relation(fields: [matrizId], references: [id], onDelete: Cascade)
   acaoId      String
-  acao        Acao     @relation(fields: [acaoId], references: [id])
+  acao        Acao     @relation(fields: [acaoId], references: [id], onDelete: Cascade)
+
+  @@unique([matrizId, acaoId])
 }
 
 model Acao {
   id              String         @id
-  og              String
-  lae             String
+  og              String?
+  lae             String?
   diretriz        String
   prazo           Prazo
-  setor           String
+  setor           String?
   meta            String
   indicador       String
   restricoes      String?
@@ -84,7 +107,13 @@ model Log {
 enum Role {
   USUARIO
   COMITE
-  ADMIN
+  ADMIN_SETOR
+  ADMIN_GERAL
+}
+
+enum TipoVoto {
+  APROVAR
+  REJEITAR
 }
 
 enum Status {

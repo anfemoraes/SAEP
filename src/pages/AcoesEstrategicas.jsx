@@ -1,10 +1,29 @@
-import React, { useState } from 'react';
-import { acoesEstrategicas } from '../services/acoes_data';
+import React, { useState, useEffect } from 'react';
+import { listarAcoes } from '../services/acoes';
+import { labelPrazo } from '../services/permissoes';
 import Swal from 'sweetalert2';
 
 export function AcoesEstrategicas({ onSelecionarAcoes }) {
+    const [acoesEstrategicas, setAcoesEstrategicas] = useState([]);
+    const [carregando, setCarregando] = useState(true);
+    const [erro, setErro] = useState(null);
     const [termoBusca, setTermoBusca] = useState('');
     const [selecionadas, setSelecionadas] = useState([]);
+
+    useEffect(() => {
+        let cancelado = false;
+        (async () => {
+            try {
+                const dados = await listarAcoes();
+                if (!cancelado) setAcoesEstrategicas(dados || []);
+            } catch (err) {
+                if (!cancelado) setErro(err.message || 'Não foi possível carregar as ações estratégicas.');
+            } finally {
+                if (!cancelado) setCarregando(false);
+            }
+        })();
+        return () => { cancelado = true; };
+    }, []);
 
     // Filtra as ações com segurança contra valores nulos
     const acoesFiltradas = acoesEstrategicas.filter(acao => {
@@ -65,6 +84,16 @@ export function AcoesEstrategicas({ onSelecionarAcoes }) {
 
     return (
         <div style={{ padding: '2rem', maxWidth: '1200px', margin: '0 auto', position: 'relative', paddingBottom: '5rem' }}>
+            {erro && (
+                <div style={{ background: '#fee2e2', color: '#dc2626', padding: '1rem', borderRadius: '6px', marginBottom: '1rem' }}>
+                    ⚠️ {erro}
+                </div>
+            )}
+            {carregando && (
+                <div style={{ padding: '2rem', textAlign: 'center', color: '#64748b' }}>Carregando ações estratégicas...</div>
+            )}
+            {!carregando && (
+            <>
             <div style={{ 
                 display: 'flex', 
                 justifyContent: 'space-between', 
@@ -171,7 +200,7 @@ export function AcoesEstrategicas({ onSelecionarAcoes }) {
                                         <td style={{ padding: '12px', color: '#64748b' }}>{acao.lae || '-'}</td>
                                         <td style={{ padding: '12px', color: '#64748b' }}>{acao.og || '-'}</td>
                                         <td style={{ padding: '12px' }}>
-                                            <span style={estiloBadgePrazo(acao.prazo)}>{acao.prazo || 'Não definido'}</span>
+                                            <span style={estiloBadgePrazo(acao.prazo)}>{labelPrazo(acao.prazo) || 'Não definido'}</span>
                                         </td>
                                         <td style={{ padding: '12px', fontWeight: '500', color: '#475569' }}>{acao.setor || acao.responsavel || 'Não atribuído'}</td>
                                     </tr>
@@ -251,18 +280,20 @@ export function AcoesEstrategicas({ onSelecionarAcoes }) {
                     </button>
                 </div>
             )}
+            </>
+            )}
         </div>
     );
 }
 
 function estiloBadgePrazo(prazo) {
     if (!prazo) return { padding: '4px 8px', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 'bold', backgroundColor: '#e2e8f0', color: '#475569' };
-    
+
     let bg = '#e2e8f0';
     let color = '#475569';
-    if (prazo.toLowerCase().includes('curto')) { bg = '#dcfce7'; color = '#16a34a'; }
-    else if (prazo.toLowerCase().includes('médio')) { bg = '#fef9c3'; color = '#ca8a04'; }
-    else if (prazo.toLowerCase().includes('longo')) { bg = '#fee2e2'; color = '#dc2626'; }
+    if (prazo.includes('CURTO')) { bg = '#dcfce7'; color = '#16a34a'; }
+    else if (prazo.includes('MEDIO')) { bg = '#fef9c3'; color = '#ca8a04'; }
+    else if (prazo.includes('LONGO')) { bg = '#fee2e2'; color = '#dc2626'; }
 
     return {
         padding: '4px 8px',
