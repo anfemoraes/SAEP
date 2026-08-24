@@ -1,0 +1,490 @@
+.acoes-estrategicas-page {
+    padding: 2rem;
+    max-width: 1240px;
+    margin: 0 auto;
+}
+
+.acoes-estrategicas-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+    flex-wrap: wrap;
+}
+
+.page-eyebrow {
+    margin: 0 0 0.65rem 0;
+    color: #2563eb;
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+}
+
+.page-title {
+    margin: 0;
+    font-size: clamp(2.05rem, 2.7vw, 2.75rem);
+    color: #0f172a;
+    line-height: 1.05;
+}
+
+.page-subtitle {
+    margin: 1rem 0 0 0;
+    color: #475569;
+    font-size: 1rem;
+    max-width: 680px;
+    line-height: 1.75;
+}
+
+.search-block {
+    width: 100%;
+    max-width: 640px;
+}
+
+.search-input-group {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    gap: 0.75rem;
+    background: #f8fafc;
+    border: 1px solid #cbd5e1;
+    border-radius: 999px;
+    padding: 0.8rem 1rem;
+    box-shadow: 0 12px 32px rgba(15, 23, 42, 0.06);
+}
+
+.search-icon {
+    display: grid;
+    place-items: center;
+    width: 2.4rem;
+    height: 2.4rem;
+    border-radius: 50%;
+    background: #e2e8f0;
+    color: #475569;
+    font-size: 1rem;
+}
+
+.search-input {
+    flex: 1;
+    min-width: 0;
+    border: none;
+    padding: 0.8rem 0.5rem;
+    font-size: 0.96rem;
+    color: #0f172a;
+    background: transparent;
+}
+
+.search-input:focus {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+}
+
+.search-input::placeholder {
+    color: #94a3b8;
+}
+
+.search-clear-button {
+    border: none;
+    background: #2563eb;
+    color: #fff;
+    font-size: 0.9rem;
+    font-weight: 700;
+    cursor: pointer;
+    padding: 0.75rem 1rem;
+    border-radius: 999px;
+    box-shadow: 0 12px 24px rgba(37, 99, 235, 0.18);
+    transition: background 0.2s ease, transform 0.2s ease;
+}
+
+.search-clear-button:hover {
+    background: #1e40af;
+    transform: translateY(-1px);
+}
+
+.search-input:focus,
+.search-clear-button:focus {
+    outline: 2px solid #2563eb;
+    outline-offset: 2px;
+}
+
+.acoes-panel-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.6fr) minmax(280px, 1fr);
+    gap: 1.5rem;
+}
+
+.panel-card,
+.detail-card {
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 24px;
+    padding: 1.5rem;
+    box-shadow: 0 12px 30px rgba(15, 23, 42, 0.06);
+}
+
+.table-panel-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.panel-label,
+.detail-eyebrow {
+    margin: 0;
+    color: #2563eb;
+    font-size: 0.82rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+}
+
+.panel-meta,
+.detail-text {
+    margin: 0.5rem 0 0 0;
+    color: #475569;
+    font-size: 0.95rem;
+    line-height: 1.7;
+}
+
+.acoes-table-container {
+    overflow-x: auto;
+    border-radius: 20px;
+}
+
+.acoes-table {
+    width: 100%;
+    min-width: 600px;
+    border-collapse: collapse;
+    font-size: 0.95rem;
+    color: #334155;
+}
+
+.acoes-table thead th {
+    padding: 1rem 1rem;
+    text-align: left;
+    white-space: nowrap;
+    font-weight: 700;
+    color: #475569;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.acoes-table tbody tr {
+    transition: background-color 0.2s ease, transform 0.2s ease;
+}
+
+.acoes-table tbody tr:hover {
+    background: #f8fafc;
+}
+
+.acoes-table tbody tr.selected-row {
+    background: #e0f2fe;
+    box-shadow: inset 0 0 0 1px rgba(37, 99, 235, 0.25);
+}
+
+.acoes-table td {
+    padding: 1rem 1rem;
+    vertical-align: middle;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.check-cell {
+    width: 60px;
+}
+
+.id-cell {
+    width: 110px;
+    color: #2563eb;
+    font-weight: 700;
+}
+
+.diretriz-cell {
+    color: #0f172a;
+    line-height: 1.6;
+}
+
+.prazo-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.4rem 0.8rem;
+    border-radius: 999px;
+    font-size: 0.8rem;
+    font-weight: 700;
+}
+
+.prazo-curto {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.prazo-medio {
+    background: #fef9c3;
+    color: #713f12;
+}
+
+.prazo-longo {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+.detail-card {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: 1.25rem;
+    min-height: 260px;
+}
+
+.detail-panel {
+    min-width: 0;
+}
+
+.detail-title {
+    margin: 0.75rem 0 0 0;
+    font-size: 1.5rem;
+    color: #0f172a;
+    line-height: 1.2;
+}
+
+.detail-meta-list {
+    list-style: none;
+    padding: 0;
+    margin: 1rem 0 0 0;
+    display: grid;
+    gap: 0.8rem;
+}
+
+.detail-meta-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 16px;
+    padding: 0.85rem 1rem;
+}
+
+.detail-meta-item span {
+    color: #64748b;
+    font-size: 0.9rem;
+}
+
+.detail-meta-item strong {
+    color: #0f172a;
+}
+
+.detail-note {
+    margin-top: 1.2rem;
+    color: #475569;
+    font-size: 0.95rem;
+    line-height: 1.6;
+}
+
+.primary-button {
+    width: 100%;
+    border: none;
+    background: #2563eb;
+    color: #fff;
+    padding: 1rem 1.2rem;
+    border-radius: 18px;
+    font-size: 1rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.primary-button:hover:not(:disabled) {
+    box-shadow: 0 12px 28px rgba(37, 99, 235, 0.22);
+}
+
+.primary-button:hover:not(:disabled) {
+    background: #1d4ed8;
+    transform: translateY(-1px);
+}
+
+.primary-button:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+}
+
+.blank-state {
+    gap: 1rem;
+}
+
+.selected-actions-list {
+    display: grid;
+    gap: 0.75rem;
+    margin: 1rem 0 0 0;
+    max-height: 260px;
+    overflow-y: auto;
+    padding-right: 0.25rem;
+}
+
+.selected-action-pill {
+    display: block;
+    padding: 0.9rem 1rem;
+    border-radius: 18px;
+    background: #f8fafc;
+    color: #0f172a;
+    font-size: 0.92rem;
+    line-height: 1.5;
+    border: 1px solid #dbeafe;
+}
+
+.selected-action-pill strong {
+    display: block;
+    color: #2563eb;
+    margin-bottom: 0.25rem;
+}
+
+.floating-action-button-container {
+    position: fixed;
+    bottom: 1.5rem;
+    right: 1.5rem;
+    z-index: 120;
+    display: flex;
+    justify-content: flex-end;
+    width: auto;
+}
+
+.floating-action-button {
+    border: none;
+    background: #2563eb;
+    color: #fff;
+    padding: 0.95rem 1.6rem;
+    border-radius: 999px;
+    font-size: 0.95rem;
+    font-weight: 700;
+    cursor: pointer;
+    box-shadow: 0 18px 40px rgba(37, 99, 235, 0.2);
+    transition: transform 0.2s ease, background 0.2s ease;
+    min-width: 220px;
+}
+
+@media (max-width: 640px) {
+    .floating-action-button-container {
+        position: static;
+        width: 100%;
+        margin-top: 1rem;
+    }
+
+    .floating-action-button {
+        width: 100%;
+        padding: 1rem;
+    }
+}
+
+.floating-action-button:hover {
+    transform: translateY(-2px);
+    background: #1d4ed8;
+}
+
+.no-results-card {
+    padding: 1.8rem 1rem;
+    border-radius: 16px;
+    background: #f8fafc;
+    color: #475569;
+    display: inline-flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    text-align: center;
+    width: 100%;
+}
+
+.no-results-card strong {
+    font-size: 1rem;
+    color: #0f172a;
+}
+
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    border: 0;
+}
+
+@media (max-width: 1024px) {
+    .acoes-panel-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .page-subtitle {
+        max-width: 100%;
+    }
+}
+
+@media (max-width: 768px) {
+    .acoes-estrategicas-page {
+        padding: 1.25rem;
+    }
+
+    .acoes-estrategicas-header {
+        gap: 1rem;
+    }
+
+    .search-block {
+        max-width: 100%;
+    }
+
+    .search-input-group {
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        padding: 0.5rem;
+    }
+
+    .search-icon {
+        margin-left: 0.2rem;
+    }
+
+    .acoes-table {
+        min-width: 640px;
+    }
+
+    .detail-panel {
+        order: -1;
+    }
+}
+
+@media (max-width: 540px) {
+    .acoes-estrategicas-page {
+        padding: 1rem;
+    }
+
+    .page-title {
+        font-size: 2rem;
+    }
+
+    .acoes-table {
+        min-width: 560px;
+    }
+
+    .detail-card {
+        padding: 1.25rem;
+    }
+}
+
+@media (max-width: 420px) {
+    .search-input-group {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .search-clear-button {
+        width: 100%;
+    }
+
+    .acoes-table {
+        min-width: 520px;
+    }
+
+    .primary-button {
+        padding: 0.95rem 1rem;
+    }
+}
