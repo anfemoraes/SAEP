@@ -6,11 +6,13 @@ import { AuthService } from './auth.service';
 import { JwtStrategy } from './jwt.strategy';
 import { LocalStrategy } from './local.strategy';
 import { jwtConfig } from '../../config/jwt.config';
+import { PrismaModule } from '../../prisma/prisma.module';
 
 @Module({
   imports: [
     PassportModule,
     JwtModule.register(jwtConfig),
+    PrismaModule,
   ],
   controllers: [AuthController],
   providers: [AuthService, JwtStrategy, LocalStrategy],

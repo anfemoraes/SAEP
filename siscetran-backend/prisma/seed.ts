@@ -9,11 +9,11 @@ async function main() {
 
   // ADMIN_GERAL: acesso total, sem setor fixo.
   await prisma.usuario.upsert({
-    where: { email: 'admin.geral@petrans.pa.gov.br' },
+    where: { email: 'admin@email.com' },
     update: {},
     create: {
-      email: 'admin.geral@petrans.pa.gov.br',
-      senha: await bcrypt.hash('AdminGeral@123', 10),
+      email: 'admin@email.com',
+      senha: await bcrypt.hash('admin123', 10),
       role: 'ADMIN_GERAL',
       ultimaTrocaSenha: new Date(),
     },
@@ -21,11 +21,11 @@ async function main() {
 
   // ADMIN_SETOR: gerencia usuários e matrizes apenas do setor CTSIST.
   await prisma.usuario.upsert({
-    where: { email: 'admin.ctsist@petrans.pa.gov.br' },
+    where: { email: 'adminsetor@email.com' },
     update: {},
     create: {
-      email: 'admin.ctsist@petrans.pa.gov.br',
-      senha: await bcrypt.hash('AdminSetor@123', 10),
+      email: 'adminsetor@email.com',
+      senha: await bcrypt.hash('adminsetor123', 10),
       role: 'ADMIN_SETOR',
       setor: 'CTSIST',
       ultimaTrocaSenha: new Date(),
@@ -34,11 +34,11 @@ async function main() {
 
   // COMITE: conselheiro, vota nas matrizes enviadas, vê todas.
   await prisma.usuario.upsert({
-    where: { email: 'comite@petrans.pa.gov.br' },
+    where: { email: 'comite@email.com' },
     update: {},
     create: {
-      email: 'comite@petrans.pa.gov.br',
-      senha: await bcrypt.hash('Comite@123', 10),
+      email: 'comite@email.com',
+      senha: await bcrypt.hash('comite123', 10),
       role: 'COMITE',
       ultimaTrocaSenha: new Date(),
     },
@@ -46,21 +46,21 @@ async function main() {
 
   // USUARIO: cria/edita apenas suas próprias matrizes, do setor CTSIST.
   await prisma.usuario.upsert({
-    where: { email: 'usuario.ctsist@petrans.pa.gov.br' },
+    where: { email: 'usuario@email.com' },
     update: {},
     create: {
-      email: 'usuario.ctsist@petrans.pa.gov.br',
-      senha: await bcrypt.hash('Usuario@123', 10),
+      email: 'usuario@email.com',
+      senha: await bcrypt.hash('usuario123', 10),
       role: 'USUARIO',
       setor: 'CTSIST',
       ultimaTrocaSenha: new Date(),
     },
   });
 
-  console.log(`👤 Admin Geral:  admin.geral@petrans.pa.gov.br / AdminGeral@123`);
-  console.log(`👤 Admin Setor:  admin.ctsist@petrans.pa.gov.br / AdminSetor@123 (setor: CTSIST)`);
-  console.log(`👤 Conselheiro:  comite@petrans.pa.gov.br / Comite@123`);
-  console.log(`👤 Usuário:      usuario.ctsist@petrans.pa.gov.br / Usuario@123 (setor: CTSIST)`);
+  console.log(`👤 Admin Geral:  admin@email.com / admin123`);
+  console.log(`👤 Admin Setor:  adminsetor@email.com / adminsetor123 (setor: CTSIST)`);
+  console.log(`👤 Conselheiro:  comite@email.com / comite123`);
+  console.log(`👤 Usuário:      usuario@email.com / usuario123 (setor: CTSIST)`);
 
   // Ações estratégicas (importadas de acoes_data.js do frontend)
   if (acoesFrontend.length === 0) {
@@ -84,7 +84,8 @@ async function main() {
         criadas++;
       } catch (error) {
         erros++;
-        console.error(`❌ Erro ao importar ação ${acaoFrontend.id}:`, error.message);
+        const mensagemErro = error instanceof Error ? error.message : String(error);
+        console.error(`❌ Erro ao importar ação ${acaoFrontend.id}:`, mensagemErro);
       }
     }
 
