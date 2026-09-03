@@ -10,7 +10,7 @@ import { CreateMatrizDto } from './dto/create-matriz.dto';
 import { UpdateMatrizDto } from './dto/update-matriz.dto';
 import { AvaliarMatrizDto } from './dto/avaliar-matriz.dto';
 import { VotarMatrizDto } from './dto/votar-matriz.dto';
-import { Status, Role } from '@prisma/client';
+import { Status, Role, Prisma } from '@prisma/client';
 
 
 
@@ -89,7 +89,7 @@ export class MatrizesService {
     return matriz;
   }
 
-    async create(createMatrizDto: CreateMatrizDto, userId: string) {
+  async create(createMatrizDto: CreateMatrizDto, userId: string) {
     const { acoes, ...dados } = createMatrizDto;
 
     if (acoes && acoes.length > 0) {
@@ -109,7 +109,7 @@ export class MatrizesService {
         criadoPorId: userId,
         acoes:
           acoes && acoes.length > 0
-            ? { create: acoes.map((a) => ({ acaoId: a.acaoId, etapas: a.etapas ?? [] })) }
+            ? { create: acoes.map((a) => ({ acaoId: a.acaoId, etapas: (a.etapas ?? []) as Prisma.InputJsonValue })) }
             : undefined,
       },
       include: this.includeCompleto,
@@ -157,10 +157,10 @@ export class MatrizesService {
 
     const { acoes, ...dados } = updateMatrizDto;
 
-    let acoesUpdate: { create: { acaoId: string; etapas: unknown }[] } | undefined = undefined;
+    let acoesUpdate: { create: { acaoId: string; etapas: Prisma.InputJsonValue }[] } | undefined = undefined;
     if (acoes) {
       await this.prisma.acoesMatriz.deleteMany({ where: { matrizId: id } });
-      acoesUpdate = { create: acoes.map((a) => ({ acaoId: a.acaoId, etapas: a.etapas ?? [] })) };
+      acoesUpdate = { create: acoes.map((a) => ({ acaoId: a.acaoId, etapas: (a.etapas ?? []) as Prisma.InputJsonValue })) };
     }
 
     const matrizAtualizada = await this.prisma.matriz.update({
