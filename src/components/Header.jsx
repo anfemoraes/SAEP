@@ -1,8 +1,10 @@
 // src/components/Header.jsx
 import React, { useState } from 'react';
-import { carregarSessao, salvarSessao, limparSessao, carregarBanco } from '../services/storage';
 import logoImg from '../assets/logo.png';
 import Swal from 'sweetalert2';
+import { login as apiLogin, logout as apiLogout } from '../services/auth';
+import { ApiError } from '../services/api';
+
 
 export function Header({ telas = {}, telaAtual, onNavigate, usuarioLogado, setUsuarioLogado }) {
     const [modalLoginAberto, setModalLoginAberto] = useState(false);
@@ -22,22 +24,14 @@ export function Header({ telas = {}, telaAtual, onNavigate, usuarioLogado, setUs
         ADMIN = 'admin'
     } = telas;
 
-    const db = carregarBanco();
     const estaLogado = Boolean(usuarioLogado);
-    const ehComiteOuAdmin = Boolean(usuarioLogado && (usuarioLogado.role === 'comite' || usuarioLogado.role === 'admin'));
-    const ehAdmin = Boolean(usuarioLogado && usuarioLogado.role === 'admin');
+    const ehComiteOuAdmin = Boolean(usuarioLogado && ['COMITE', 'ADMIN_SETOR', 'ADMIN_GERAL'].includes(usuarioLogado.role));
+    const ehAdmin = Boolean(usuarioLogado && ['ADMIN_SETOR', 'ADMIN_GERAL'].includes(usuarioLogado.role));
 
-    const handleNavigate = (novaTela) => {
-        setMenuAberto(false);
-        onNavigate(novaTela);
-    };
-
-    const handleLoginSubmit = (e) => {
+        const handleLoginSubmit = async (e) => {
         e.preventDefault();
-        const usuarioEncontrado = db.usuarios.find(u => u.email === email.trim().toLowerCase() && u.senha === senha);
-
-        if (usuarioEncontrado) {
-            salvarSessao(usuarioEncontrado);
+        try {
+            const usuarioEncontrado = await apiLogin(email.trim().toLowerCase(), senha);
             setUsuarioLogado(usuarioEncontrado);
             setModalLoginAberto(false);
             setEmail('');
@@ -49,16 +43,16 @@ export function Header({ telas = {}, telaAtual, onNavigate, usuarioLogado, setUs
                 timer: 2000,
                 showConfirmButton: false
             });
-        } else {
+        } catch (err) {
+            const mensagem = err instanceof ApiError ? err.message : 'Não foi possível fazer login. Tente novamente.';
             Swal.fire({
                 icon: 'error',
                 title: 'Erro no login',
-                text: 'E-mail ou senha incorretos!',
+                text: mensagem,
                 confirmButtonColor: '#2563eb'
             });
         }
     };
-
     const handleLogoutClick = async () => {
         const result = await Swal.fire({
             title: 'Sair da sessão?',
@@ -71,8 +65,8 @@ export function Header({ telas = {}, telaAtual, onNavigate, usuarioLogado, setUs
             cancelButtonText: 'Cancelar'
         });
 
-        if (result.isConfirmed) {
-            limparSessao();
+            if (result.isConfirmed) {
+            apiLogout();
             setUsuarioLogado(null);
             handleNavigate(HOME);
             Swal.fire({

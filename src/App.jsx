@@ -1,7 +1,7 @@
 // src/App.jsx
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Header } from './components/Header';
-import { carregarSessao } from './services/storage';
+import { usuarioEmCache, revalidarSessao } from './services/auth';
 import { acoesEstrategicas } from './services/acoes_data';
 import { AcoesEstrategicas } from './pages/AcoesEstrategicas';
 import { FormularioMatriz } from './pages/FormularioMatriz';
@@ -26,8 +26,14 @@ export default function App() {
         ADMIN: 'admin'
     };
 
-    const [usuarioLogado, setUsuarioLogado] = useState(carregarSessao());
+        const [usuarioLogado, setUsuarioLogado] = useState(usuarioEmCache());
     const [telaAtual, setTelaAtual] = useState(TELAS.HOME);
+
+    useEffect(() => {
+        if (usuarioEmCache()) {
+            revalidarSessao().then((usuario) => setUsuarioLogado(usuario));
+        }
+    }, []);
     const [acoesSelecionadas, setAcoesSelecionadas] = useState([]);
     const [modoFormulario, setModoFormulario] = useState('novo');
     const [matrizAtual, setMatrizAtual] = useState(null);

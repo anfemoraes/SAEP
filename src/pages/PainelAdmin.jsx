@@ -118,9 +118,9 @@ export function PainelAdmin({ usuarioLogado }) {
 function estiloBadgeRole(role) {
     let bg = '#e2e8f0';
     let color = '#475569';
-    if (role === 'admin') { bg = '#ede9fe'; color = '#7c3aed'; }
-    else if (role === 'comite') { bg = '#fef3c7'; color = '#d97706'; }
-    else if (role === 'usuario') { bg = '#e0f2fe'; color = '#0284c7'; }
+    if (role === 'ADMIN_GERAL' || role === 'ADMIN_SETOR') { bg = '#ede9fe'; color = '#7c3aed'; }
+    else if (role === 'COMITE') { bg = '#fef3c7'; color = '#d97706'; }
+    else if (role === 'USUARIO') { bg = '#e0f2fe'; color = '#0284c7'; }
 
     return {
         padding: '4px 8px',
