@@ -7,8 +7,11 @@ import {
   Max,
   IsArray,
   IsEnum,
+  ValidateNested,
 } from 'class-validator';
+import { Type } from 'class-transformer';
 import { Impacto } from '@prisma/client';
+import { AcaoEtapaDto } from './create-matriz.dto';
 
 export class UpdateMatrizDto {
   @ApiProperty({ example: 'Modernização da Frota de Fiscalização', required: false })
@@ -63,8 +66,10 @@ export class UpdateMatrizDto {
   @IsOptional()
   percentual?: number;
 
-  @ApiProperty({ example: ['AE 1.1.1.1', 'AE 1.1.1.2'], required: false })
+  @ApiProperty({ type: [AcaoEtapaDto], required: false })
   @IsArray()
   @IsOptional()
-  acoesIds?: string[];
+  @ValidateNested({ each: true })
+  @Type(() => AcaoEtapaDto)
+  acoes?: AcaoEtapaDto[];
 }

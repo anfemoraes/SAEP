@@ -12,6 +12,8 @@ import { AvaliarMatrizDto } from './dto/avaliar-matriz.dto';
 import { VotarMatrizDto } from './dto/votar-matriz.dto';
 import { Status, Role } from '@prisma/client';
 
+
+
 interface UsuarioLogado {
   id: string;
   role: Role;
@@ -87,10 +89,11 @@ export class MatrizesService {
     return matriz;
   }
 
-  async create(createMatrizDto: CreateMatrizDto, userId: string) {
-    const { acoesIds, ...dados } = createMatrizDto;
+    async create(createMatrizDto: CreateMatrizDto, userId: string) {
+    const { acoes, ...dados } = createMatrizDto;
 
-    if (acoesIds && acoesIds.length > 0) {
+    if (acoes && acoes.length > 0) {
+      const acoesIds = acoes.map((a) => a.acaoId);
       const acoesExistentes = await this.prisma.acao.findMany({
         where: { id: { in: acoesIds } },
       });
@@ -105,8 +108,8 @@ export class MatrizesService {
         ...dados,
         criadoPorId: userId,
         acoes:
-          acoesIds && acoesIds.length > 0
-            ? { create: acoesIds.map((acaoId) => ({ acaoId })) }
+          acoes && acoes.length > 0
+            ? { create: acoes.map((a) => ({ acaoId: a.acaoId, etapas: a.etapas ?? [] })) }
             : undefined,
       },
       include: this.includeCompleto,
@@ -152,12 +155,12 @@ export class MatrizesService {
       throw new BadRequestException('Matriz já enviada ou aprovada não pode ser editada');
     }
 
-    const { acoesIds, ...dados } = updateMatrizDto;
+    const { acoes, ...dados } = updateMatrizDto;
 
-    let acoesUpdate: { create: { acaoId: string }[] } | undefined = undefined;
-    if (acoesIds) {
+    let acoesUpdate: { create: { acaoId: string; etapas: unknown }[] } | undefined = undefined;
+    if (acoes) {
       await this.prisma.acoesMatriz.deleteMany({ where: { matrizId: id } });
-      acoesUpdate = { create: acoesIds.map((acaoId) => ({ acaoId })) };
+      acoesUpdate = { create: acoes.map((a) => ({ acaoId: a.acaoId, etapas: a.etapas ?? [] })) };
     }
 
     const matrizAtualizada = await this.prisma.matriz.update({

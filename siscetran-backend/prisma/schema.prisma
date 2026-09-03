@@ -73,6 +73,7 @@ model AcoesMatriz {
   matriz      Matriz   @relation(fields: [matrizId], references: [id], onDelete: Cascade)
   acaoId      String
   acao        Acao     @relation(fields: [acaoId], references: [id], onDelete: Cascade)
+  etapas      Json     @default("[]")
 
   @@unique([matrizId, acaoId])
 }
