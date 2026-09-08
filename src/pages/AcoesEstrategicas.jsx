@@ -61,7 +61,6 @@ export function AcoesEstrategicas({ onSelecionarAcoes }) {
                 <div className="search-block">
                     <label htmlFor="busca-acao" className="sr-only">Buscar ações estratégicas</label>
                     <div className="search-input-group">
-                        <span className="search-icon">🔎</span>
                         <input
                             id="busca-acao"
                             type="text"

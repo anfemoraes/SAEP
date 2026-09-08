@@ -82,7 +82,7 @@ export default function App() {
                             }} 
                         />
 
-                        <h1 style={{ fontSize: '2.5rem', color: '#1e293b', marginBottom: '1rem' }}>SISCETRAN</h1>
+                        <h1 style={{ fontSize: '2.5rem', color: '#1e293b', marginBottom: '1rem' }}>SAEP</h1>
                         <p style={{ fontSize: '1.1rem', color: '#64748b', maxWidth: '600px', margin: '0 auto 2rem auto' }}>
                             Sistema de Ações Estratégicas do PETRANS. Gerencie matrizes, acompanhe o andamento de metas e envie análises para o comitê com total segurança.
                         </p>
