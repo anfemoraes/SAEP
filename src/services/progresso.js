@@ -3,7 +3,6 @@
 // definido no formulário, e agrega esse percentual por Objetivo (OG), Eixo (LAE)
 // e Setor responsável — alimentando o Painel CETRAN 2030.
 
-import { carregarBanco } from './storage';
 import { acoesEstrategicas } from './acoes_data';
 
 /**
@@ -26,22 +25,26 @@ export function listarSetoresDaAcao(setorTexto) {
 }
 
 /**
- * Varre todos os registros (Matrizes) com status "Aprovado" e monta um mapa
+ * Varre todos os registros (Matrizes) com status "APROVADO" e monta um mapa
  * { acaoId: percentual } com o andamento oficial de cada Ação estratégica.
  * Só Matrizes aprovadas contam — antes disso o checklist só está sendo planejado.
  * Se a mesma Ação aparecer em mais de uma Matriz aprovada, usa a mais recente.
+ *
+ * @param {Array} matrizes - lista de matrizes vindas da API
  */
-export function obterPercentuaisPorAcao() {
-    const db = carregarBanco();
-    const registros = db?.registros || [];
-    const aprovados = registros
-        .filter(r => r.status === 'Aprovado')
+export function obterPercentuaisPorAcao(matrizes = []) {
+    const aprovadas = [...matrizes]
+        .filter(r => r.status === 'APROVADO')
         .sort((a, b) => new Date(a.dataCriacao) - new Date(b.dataCriacao));
 
     const percentualPorAcao = {};
-    aprovados.forEach(registro => {
-        (registro.acoesEstrategicas || []).forEach(acaoNaMatriz => {
-            percentualPorAcao[acaoNaMatriz.id] = calcularPercentualEtapas(acaoNaMatriz.etapas);
+    aprovadas.forEach(registro => {
+        (registro.acoes || []).forEach(acaoNaMatriz => {
+            const acaoId = acaoNaMatriz.acaoId || acaoNaMatriz.acao?.id;
+            const etapas = acaoNaMatriz.etapas || [];
+            if (acaoId) {
+                percentualPorAcao[acaoId] = calcularPercentualEtapas(etapas);
+            }
         });
     });
     return percentualPorAcao;
@@ -57,9 +60,11 @@ const media = (valores) => {
  * Ações que ainda não têm Matriz aprovada entram com 0% — assim o painel mostra
  * o andamento real do plano todo, não só do que já foi medido.
  * Agregação sempre por média simples entre os itens do grupo (não ponderada).
+ *
+ * @param {Array} matrizes - lista de matrizes vindas da API
  */
-export function agregarProgresso() {
-    const percentualPorAcao = obterPercentuaisPorAcao();
+export function agregarProgresso(matrizes = []) {
+    const percentualPorAcao = obterPercentuaisPorAcao(matrizes);
 
     const porObjetivo = {};
     const porProjeto = {};
