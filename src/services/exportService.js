@@ -1,23 +1,20 @@
 // src/services/exportService.js
 import * as XLSX from 'xlsx';
-import { carregarBanco } from './storage.js';
 
-export function exportarMatrizesAprovadasCSV() {
-    const db = carregarBanco();
-    const registros = db.registros || [];
-    const aprovadas = registros.filter(r => r.status === 'Aprovado');
+export function exportarMatrizesAprovadasCSV(matrizes) {
+    const aprovadas = matrizes.filter(r => r.status === 'APROVADO');
 
     if (aprovadas.length === 0) {
         return { sucesso: false, mensagem: 'Nenhuma matriz aprovada encontrada para exportar.' };
     }
 
     const cabecalho = ['ID', 'Nome da Acao', 'Criado Por', 'O Que', 'Por Que', 'Onde', 'Quando', 'Como', 'Quanto', 'Impacto', 'Progresso', 'Parecer Comite', 'Data de Aprovacao'];
-    
+
     const linhas = aprovadas.map(reg => {
         return [
             `"${reg.id || ''}"`,
             `"${(reg.nome || '').replace(/"/g, '""')}"`,
-            `"${reg.criadoPor || ''}"`,
+            `"${reg.criadoPor?.email || reg.criadoPor || ''}"`,
             `"${(reg.oque || '').replace(/"/g, '""')}"`,
             `"${(reg.porque || '').replace(/"/g, '""')}"`,
             `"${(reg.onde || '').replace(/"/g, '""')}"`,
@@ -27,7 +24,7 @@ export function exportarMatrizesAprovadasCSV() {
             `"${reg.impacto || ''}"`,
             `"${reg.percentual || 0}%"`,
             `"${(reg.comentarioComite || '').replace(/"/g, '""')}"`,
-            `"${reg.dataAvaliacao || ''}"`
+            `"${reg.dataAvaliacao ? new Date(reg.dataAvaliacao).toLocaleDateString('pt-BR') : ''}"`
         ].join(';');
     });
 
@@ -44,10 +41,8 @@ export function exportarMatrizesAprovadasCSV() {
     return { sucesso: true, quantidade: aprovadas.length };
 }
 
-export function exportarMatrizesAprovadasExcel() {
-    const db = carregarBanco();
-    const registros = db.registros || [];
-    const aprovadas = registros.filter(r => r.status === 'Aprovado');
+export function exportarMatrizesAprovadasExcel(matrizes) {
+    const aprovadas = matrizes.filter(r => r.status === 'APROVADO');
 
     if (aprovadas.length === 0) {
         return { sucesso: false, mensagem: 'Nenhuma matriz aprovada encontrada para exportar.' };
@@ -57,7 +52,7 @@ export function exportarMatrizesAprovadasExcel() {
         'Item': index + 1,
         'ID da Matriz': reg.id || '',
         'Nome da Ação': reg.nome || '',
-        'Criado Por': reg.criadoPor || '',
+        'Criado Por': reg.criadoPor?.email || reg.criadoPor || '',
         'O Quê?': reg.oque || '',
         'Por Quê?': reg.porque || '',
         'Onde?': reg.onde || '',
@@ -67,7 +62,7 @@ export function exportarMatrizesAprovadasExcel() {
         'Impacto': reg.impacto || '',
         'Progresso (%)': `${reg.percentual || 0}%`,
         'Parecer do Comitê': reg.comentarioComite || '',
-        'Data de Aprovação': reg.dataAvaliacao || ''
+        'Data de Aprovação': reg.dataAvaliacao ? new Date(reg.dataAvaliacao).toLocaleDateString('pt-BR') : ''
     }));
 
     const worksheet = XLSX.utils.json_to_sheet(dadosFormatados);

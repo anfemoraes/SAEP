@@ -652,6 +652,7 @@ export function FormularioMatriz({
                                 </button>
                             )}
                         </>
+                    )}
                     {podeSalvarProgresso && (
                         <button 
                             type="button" 

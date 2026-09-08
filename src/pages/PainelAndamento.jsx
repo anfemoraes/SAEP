@@ -1,28 +1,45 @@
 // src/pages/PainelAndamento.jsx
-import React from 'react';
-import { carregarBanco } from '../services/storage';
+import React, { useState, useEffect, useCallback } from 'react';
+import { listarMatrizes } from '../services/matrizes';
 import { acoesEstrategicas } from '../services/acoes_data';
 import { exportarMatrizesAprovadasCSV, exportarMatrizesAprovadasExcel } from '../services/exportService';
+import { ApiError } from '../services/api';
 import Swal from 'sweetalert2';
 
 export function PainelAndamento() {
-    const db = carregarBanco();
-    const registros = db.registros || [];
+    const [matrizes, setMatrizes] = useState([]);
+    const [carregando, setCarregando] = useState(true);
 
-    // Estatísticas gerais
+    const carregarDados = useCallback(async () => {
+        setCarregando(true);
+        try {
+            const dados = await listarMatrizes();
+            setMatrizes(Array.isArray(dados) ? dados : []);
+        } catch (err) {
+            const msg = err instanceof ApiError ? err.message : 'Não foi possível carregar as matrizes.';
+            Swal.fire({ icon: 'error', title: 'Erro ao carregar', text: msg, confirmButtonColor: '#2563eb' });
+        } finally {
+            setCarregando(false);
+        }
+    }, []);
+
+    useEffect(() => {
+        carregarDados();
+    }, [carregarDados]);
+
+    // Estatísticas calculadas a partir da API
     const totalAcoesBase = acoesEstrategicas.length;
-    const totalRegistros = registros.length;
-    const rascunhos = registros.filter(r => r.status === 'Rascunho').length;
-    const enviados = registros.filter(r => r.status === 'Enviado').length;
-    const aprovados = registros.filter(r => r.status === 'Aprovado').length;
-    const pendentes = registros.filter(r => r.status === 'Pendente').length;
+    const totalRegistros = matrizes.length;
+    const rascunhos = matrizes.filter(r => r.status === 'RASCUNHO').length;
+    const enviados = matrizes.filter(r => r.status === 'ENVIADO').length;
+    const aprovados = matrizes.filter(r => r.status === 'APROVADO').length;
+    const pendentes = matrizes.filter(r => r.status === 'PENDENTE').length;
 
-    // Cálculo da média de progresso das matrizes cadastradas
-    const somaProgresso = registros.reduce((acc, curr) => acc + (parseFloat(curr.percentual) || 0), 0);
+    const somaProgresso = matrizes.reduce((acc, curr) => acc + (parseFloat(curr.percentual) || 0), 0);
     const progressoMedio = totalRegistros > 0 ? (somaProgresso / totalRegistros).toFixed(1) : 0;
 
     const handleExportarCSV = () => {
-        const resultado = exportarMatrizesAprovadasCSV();
+        const resultado = exportarMatrizesAprovadasCSV(matrizes);
         if (resultado.sucesso) {
             Swal.fire({
                 icon: 'success',
@@ -32,17 +49,12 @@ export function PainelAndamento() {
                 showConfirmButton: false
             });
         } else {
-            Swal.fire({
-                icon: 'info',
-                title: 'Nada para exportar',
-                text: resultado.mensagem,
-                confirmButtonColor: '#2563eb'
-            });
+            Swal.fire({ icon: 'info', title: 'Nada para exportar', text: resultado.mensagem, confirmButtonColor: '#2563eb' });
         }
     };
 
     const handleExportarExcel = () => {
-        const resultado = exportarMatrizesAprovadasExcel();
+        const resultado = exportarMatrizesAprovadasExcel(matrizes);
         if (resultado.sucesso) {
             Swal.fire({
                 icon: 'success',
@@ -52,14 +64,17 @@ export function PainelAndamento() {
                 showConfirmButton: false
             });
         } else {
-            Swal.fire({
-                icon: 'info',
-                title: 'Nada para exportar',
-                text: resultado.mensagem,
-                confirmButtonColor: '#2563eb'
-            });
+            Swal.fire({ icon: 'info', title: 'Nada para exportar', text: resultado.mensagem, confirmButtonColor: '#2563eb' });
         }
     };
+
+    if (carregando) {
+        return (
+            <div style={{ padding: '3rem', textAlign: 'center', color: '#64748b' }}>
+                <p>Carregando dados do painel...</p>
+            </div>
+        );
+    }
 
     return (
         <div style={{ padding: '2rem', maxWidth: '1200px', margin: '0 auto' }}>
@@ -69,17 +84,16 @@ export function PainelAndamento() {
                     <p style={{ color: '#64748b', fontSize: '0.9rem', margin: '4px 0 0 0' }}>Visão consolidada do progresso e monitoramento das matrizes 5W2H do PETRANS.</p>
                 </div>
 
-                {/* Container dos dois botões de exportação */}
                 <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-                    <button 
+                    <button
                         onClick={handleExportarCSV}
-                        style={{ 
-                            background: '#0284c7', 
-                            color: '#fff', 
-                            border: 'none', 
-                            padding: '0.6rem 1.2rem', 
-                            borderRadius: '6px', 
-                            fontWeight: 'bold', 
+                        style={{
+                            background: '#0284c7',
+                            color: '#fff',
+                            border: 'none',
+                            padding: '0.6rem 1.2rem',
+                            borderRadius: '6px',
+                            fontWeight: 'bold',
                             cursor: 'pointer',
                             display: 'flex',
                             alignItems: 'center',
@@ -90,15 +104,15 @@ export function PainelAndamento() {
                          Exportar CSV
                     </button>
 
-                    <button 
+                    <button
                         onClick={handleExportarExcel}
-                        style={{ 
-                            background: '#16a34a', 
-                            color: '#fff', 
-                            border: 'none', 
-                            padding: '0.6rem 1.2rem', 
-                            borderRadius: '6px', 
-                            fontWeight: 'bold', 
+                        style={{
+                            background: '#16a34a',
+                            color: '#fff',
+                            border: 'none',
+                            padding: '0.6rem 1.2rem',
+                            borderRadius: '6px',
+                            fontWeight: 'bold',
                             cursor: 'pointer',
                             display: 'flex',
                             alignItems: 'center',
@@ -158,7 +172,7 @@ export function PainelAndamento() {
                 <div style={{ background: '#fff', padding: '1.5rem', borderRadius: '8px', border: '1px solid #e2e8f0', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
                     <h3 style={{ color: '#334155', fontSize: '1.1rem', marginBottom: '1rem', borderBottom: '1px solid #e2e8f0', paddingBottom: '8px' }}>Transparência de Dados</h3>
                     <p style={{ color: '#64748b', fontSize: '0.9rem', lineHeight: '1.6' }}>
-                        Os dados exibidos neste painel são calculados em tempo real com base nos registros locais salvos no navegador. As diretrizes seguem estritamente o planejamento estratégico do PETRANS / CETRAN-PA.
+                        Os dados exibidos neste painel são carregados em tempo real da API do SISCETRAN. As diretrizes seguem estritamente o planejamento estratégico do PETRANS / CETRAN-PA.
                     </p>
                 </div>
             </div>
