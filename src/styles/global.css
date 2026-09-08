@@ -10,10 +10,7 @@
 }
 
 body {
-    background: linear-gradient(rgba(248, 250, 252, 0.9), rgba(248, 250, 252, 0.9)), url('../assets/background.jpg');
-    background-size: cover;
-    background-position: center;
-    background-attachment: fixed;
+    background-color: #f8fafc;
     color: #1e293b;
     -webkit-font-smoothing: antialiased;
     min-height: 100vh;

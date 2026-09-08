@@ -2,7 +2,6 @@
 import React, { useState, useEffect } from 'react';
 import { Header } from './components/Header';
 import { usuarioEmCache, revalidarSessao } from './services/auth';
-import { acoesEstrategicas } from './services/acoes_data';
 import { AcoesEstrategicas } from './pages/AcoesEstrategicas';
 import { FormularioMatriz } from './pages/FormularioMatriz';
 import { ConsultarMatrizes } from './pages/ConsultarMatrizes';
@@ -48,7 +47,8 @@ export default function App() {
     };
 
     const abrirFormularioEdicao = (registro, origem) => {
-        setAcoesSelecionadas(registro.acoesEstrategicas || []);
+        const acoes = (registro.acoes || registro.acoesEstrategicas || []).map(a => a.acao || a);
+        setAcoesSelecionadas(acoes);
         setModoFormulario('editar');
         setMatrizAtual(registro);
         setPaginaAnterior(origem || TELAS.CONSULTAR);

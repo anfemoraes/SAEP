@@ -79,20 +79,23 @@ model AcoesMatriz {
 }
 
 model Acao {
-  id              String         @id
-  og              String?
-  lae             String?
-  diretriz        String
-  prazo           Prazo
-  setor           String?
-  meta            String
-  indicador       String
-  restricoes      String?
-  linhaPlanilha   Int
-  responsavel     String?
+  id               String         @id
+  og               String?
+  lae              String?
+  projetoCodigo    String?
+  projetoNome      String?
+  projetoTema      String?
+  diretriz         String
+  prazo            Prazo
+  setor            String?
+  meta             String
+  indicador        String
+  restricoes       String?
+  linhaPlanilha    Int
+  responsavel      String?
   dadosIncompletos String[]
   
-  matrizes        AcoesMatriz[]
+  matrizes         AcoesMatriz[]
 }
 
 model Log {

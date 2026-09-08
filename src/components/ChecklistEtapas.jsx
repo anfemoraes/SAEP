@@ -32,7 +32,7 @@ export function ChecklistEtapas({ acaoId, acaoLabel, etapas = [], onChange, edit
     };
 
     const alternarConclusao = (id) => {
-        onChange(etapas.map(e => e.id === id ? { ...e, concluida: !e.concluida, concluidaEm: !e.concluida ? new Date().toLocaleString() : null } : e));
+        onChange(etapas.map(e => e.id === id ? { ...e, concluida: !e.concluida, concluidaEm: !e.concluida ? new Date().toISOString() : null } : e));
     };
 
     const renomearEtapa = (id, titulo) => {

@@ -1,30 +1,65 @@
 // src/pages/ConsultarMatrizes.jsx
-import React, { useState } from 'react';
-import { carregarBanco, salvarBanco } from '../services/storage';
+import React, { useState, useEffect, useCallback } from 'react';
+import { listarMatrizes, removerMatriz } from '../services/matrizes';
 import Swal from 'sweetalert2';
 
 export function ConsultarMatrizes({ usuarioLogado, modo = 'todas', onNavigate, onEditar }) {
-    const [db, setDb] = useState(carregarBanco());
+    const [registros, setRegistros] = useState([]);
+    const [carregando, setCarregando] = useState(true);
     const [filtroStatus, setFiltroStatus] = useState('TODOS');
     const [termoBusca, setTermoBusca] = useState('');
     const [matrizSelecionada, setMatrizSelecionada] = useState(null);
 
-    const registros = db.registros || [];
+    const carregarDados = useCallback(async () => {
+        setCarregando(true);
+        try {
+            const params = {};
+            if (modo === 'rascunhos') {
+                params.status = 'RASCUNHO';
+                if (usuarioLogado?.id) {
+                    params.usuarioId = usuarioLogado.id;
+                }
+            } else if (filtroStatus !== 'TODOS') {
+                params.status = filtroStatus;
+            }
+
+            const data = await listarMatrizes(params);
+            setRegistros(Array.isArray(data) ? data : []);
+        } catch (error) {
+            console.error('Erro ao listar matrizes:', error);
+            Swal.fire({
+                icon: 'error',
+                title: 'Erro ao carregar',
+                text: error.message || 'Não foi possível carregar as matrizes do servidor.',
+                confirmButtonColor: '#2563eb'
+            });
+        } finally {
+            setCarregando(false);
+        }
+    }, [modo, filtroStatus, usuarioLogado]);
+
+    useEffect(() => {
+        carregarDados();
+    }, [carregarDados]);
 
     const registrosFiltrados = registros.filter(reg => {
-        if (modo === 'rascunhos') {
-            return reg.status === 'Rascunho' && reg.criadoPor === usuarioLogado?.email;
-        }
+        const autorEmail = reg.criadoPor?.email || (typeof reg.criadoPor === 'string' ? reg.criadoPor : '');
+        const buscaLower = termoBusca.toLowerCase();
 
-        const matchStatus = filtroStatus === 'TODOS' || reg.status === filtroStatus;
-        const matchTermo = (reg.id + reg.nome + reg.criadoPor + reg.oque).toLowerCase().includes(termoBusca.toLowerCase());
-        return matchStatus && matchTermo;
+        const matchTermo = (
+            String(reg.id || '') +
+            ' ' + (reg.nome || '') +
+            ' ' + autorEmail +
+            ' ' + (reg.oque || '')
+        ).toLowerCase().includes(buscaLower);
+
+        return matchTermo;
     });
 
     const handleExcluir = async (id) => {
         const result = await Swal.fire({
             title: 'Excluir registro?',
-            text: 'Esta ação não poderá ser desfeita.',
+            text: 'Esta ação não poderá ser desfeita no banco de dados.',
             icon: 'warning',
             showCancelButton: true,
             confirmButtonColor: '#e63946',
@@ -34,19 +69,49 @@ export function ConsultarMatrizes({ usuarioLogado, modo = 'todas', onNavigate, o
         });
 
         if (result.isConfirmed) {
-            const dbAtualizado = carregarBanco();
-            dbAtualizado.registros = dbAtualizado.registros.filter(r => r.id !== id);
-            salvarBanco(dbAtualizado);
-            setDb(dbAtualizado);
+            try {
+                await removerMatriz(id);
+                setRegistros(prev => prev.filter(r => r.id !== id));
 
-            Swal.fire({
-                icon: 'success',
-                title: 'Excluído!',
-                text: 'O registro foi removido com sucesso.',
-                timer: 1500,
-                showConfirmButton: false
-            });
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Excluído!',
+                    text: 'O registro foi removido com sucesso.',
+                    timer: 1500,
+                    showConfirmButton: false
+                });
+            } catch (error) {
+                console.error('Erro ao excluir matriz:', error);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Erro ao excluir',
+                    text: error.message || 'Não foi possível excluir a matriz.',
+                    confirmButtonColor: '#2563eb'
+                });
+            }
         }
+    };
+
+    const podeEditar = (reg) => {
+        const autorId = reg.criadoPor?.id || reg.usuarioId;
+        const autorEmail = reg.criadoPor?.email || (typeof reg.criadoPor === 'string' ? reg.criadoPor : '');
+        const ehAutor = (usuarioLogado?.id && autorId === usuarioLogado.id) ||
+                        (usuarioLogado?.email && autorEmail === usuarioLogado.email);
+        const ehAdmin = usuarioLogado?.role === 'ADMIN_GERAL' || usuarioLogado?.role === 'ADMIN_SETOR';
+
+        // Rascunhos e Pendentes podem ser editados; Aprovadas podem ter progresso atualizado
+        return ehAutor || ehAdmin;
+    };
+
+    const podeExcluir = (reg) => {
+        const autorId = reg.criadoPor?.id || reg.usuarioId;
+        const autorEmail = reg.criadoPor?.email || (typeof reg.criadoPor === 'string' ? reg.criadoPor : '');
+        const ehAutor = (usuarioLogado?.id && autorId === usuarioLogado.id) ||
+                        (usuarioLogado?.email && autorEmail === usuarioLogado.email);
+        const ehAdmin = usuarioLogado?.role === 'ADMIN_GERAL';
+
+        // Não permite excluir matrizes já aprovadas
+        return (ehAutor || ehAdmin) && reg.status !== 'APROVADO';
     };
 
     return (
@@ -57,7 +122,7 @@ export function ConsultarMatrizes({ usuarioLogado, modo = 'todas', onNavigate, o
                     <p style={{ color: '#64748b', fontSize: '0.95rem', marginTop: '0.4rem' }}>
                         {modo === 'rascunhos'
                             ? 'Continue trabalhando nas matrizes que ainda não foram enviadas para o comitê.'
-                            : 'Consulte todas as matrizes disponíveis no sistema, filtrando por status ou termo.'}
+                            : 'Consulte todas as matrizes sincronizadas com o servidor, filtrando por status ou termo.'}
                     </p>
                 </div>
 
@@ -76,53 +141,72 @@ export function ConsultarMatrizes({ usuarioLogado, modo = 'todas', onNavigate, o
                             style={{ padding: '0.5rem', border: '1px solid #cbd5e1', borderRadius: '6px', background: '#fff', fontSize: '0.9rem' }}
                         >
                             <option value="TODOS">Todos os Status</option>
-                            <option value="Rascunho">Rascunho</option>
-                            <option value="Enviado">Enviado</option>
-                            <option value="Aprovado">Aprovado</option>
-                            <option value="Pendente">Pendente / Reprovado</option>
+                            <option value="RASCUNHO">Rascunho</option>
+                            <option value="ENVIADO">Enviado</option>
+                            <option value="APROVADO">Aprovado</option>
+                            <option value="PENDENTE">Pendente / Correção</option>
                         </select>
                     )}
                 </div>
             </div>
 
             <div style={{ background: '#fff', borderRadius: '8px', border: '1px solid #e2e8f0', overflow: 'hidden', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
-                {registrosFiltrados.length > 0 ? (
-                    <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.9rem' }}>
-                        <thead>
-                            <tr style={{ background: '#f8fafc', borderBottom: '1px solid #e2e8f0', color: '#475569' }}>
-                                <th style={{ padding: '12px' }}>ID</th>
-                                <th style={{ padding: '12px' }}>Nome da Ação</th>
-                                <th style={{ padding: '12px' }}>Autor</th>
-                                <th style={{ padding: '12px' }}>Custo (Quanto)</th>
-                                <th style={{ padding: '12px' }}>Progresso</th>
-                                <th style={{ padding: '12px' }}>Status</th>
-                                <th style={{ padding: '12px', textAlign: 'center' }}>Ações</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {registrosFiltrados.map(reg => (
-                                <tr key={reg.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
-                                    <td style={{ padding: '12px', fontWeight: 'bold', color: '#2563eb' }}>{reg.id}</td>
-                                    <td style={{ padding: '12px', color: '#1e293b' }}>{reg.nome}</td>
-                                    <td style={{ padding: '12px', color: '#64748b' }}>{reg.criadoPor}</td>
-                                    <td style={{ padding: '12px', fontWeight: '500' }}>{reg.quanto}</td>
-                                    <td style={{ padding: '12px' }}>{reg.percentual}%</td>
-                                    <td style={{ padding: '12px' }}><span style={estiloBadgeStatus(reg.status)}>{reg.status}</span></td>
-                                    <td style={{ padding: '12px', textAlign: 'center' }}>
-                                        <button onClick={() => setMatrizSelecionada(reg)} style={{ background: 'transparent', border: 'none', color: '#2563eb', cursor: 'pointer', marginRight: '8px', fontWeight: 'bold' }}>Ver</button>
-                                        {reg.criadoPor === usuarioLogado?.email && (reg.status === 'Rascunho' || reg.status === 'Pendente') && (
-                                            <button onClick={() => onEditar && onEditar(reg)} style={{ background: 'transparent', border: 'none', color: '#0f766e', cursor: 'pointer', marginRight: '8px', fontWeight: 'bold' }}>Editar</button>
-                                        )}
-                                        <button onClick={() => handleExcluir(reg.id)} style={{ background: 'transparent', border: 'none', color: '#dc2626', cursor: 'pointer', fontWeight: 'bold' }}>Excluir</button>
-                                    </td>
+                {carregando ? (
+                    <div style={{ padding: '3rem', textAlign: 'center', color: '#64748b' }}>
+                        <p style={{ margin: 0, fontSize: '1rem' }}>Carregando matrizes do servidor...</p>
+                    </div>
+                ) : registrosFiltrados.length > 0 ? (
+                    <div style={{ overflowX: 'auto' }}>
+                        <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.9rem' }}>
+                            <thead>
+                                <tr style={{ background: '#f8fafc', borderBottom: '1px solid #e2e8f0', color: '#475569' }}>
+                                    <th style={{ padding: '12px' }}>ID</th>
+                                    <th style={{ padding: '12px' }}>Nome da Ação</th>
+                                    <th style={{ padding: '12px' }}>Autor</th>
+                                    <th style={{ padding: '12px' }}>Custo (Quanto)</th>
+                                    <th style={{ padding: '12px' }}>Progresso</th>
+                                    <th style={{ padding: '12px' }}>Status</th>
+                                    <th style={{ padding: '12px', textAlign: 'center' }}>Ações</th>
                                 </tr>
-                            ))}
-                        </tbody>
-                    </table>
+                            </thead>
+                            <tbody>
+                                {registrosFiltrados.map(reg => {
+                                    const autorEmail = reg.criadoPor?.email || (typeof reg.criadoPor === 'string' ? reg.criadoPor : '-');
+                                    return (
+                                        <tr key={reg.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
+                                            <td style={{ padding: '12px', fontWeight: 'bold', color: '#2563eb' }}>{reg.id}</td>
+                                            <td style={{ padding: '12px', color: '#1e293b' }}>{reg.nome}</td>
+                                            <td style={{ padding: '12px', color: '#64748b' }}>{autorEmail}</td>
+                                            <td style={{ padding: '12px', fontWeight: '500' }}>{reg.quanto || '-'}</td>
+                                            <td style={{ padding: '12px' }}>{reg.percentual || 0}%</td>
+                                            <td style={{ padding: '12px' }}><span style={estiloBadgeStatus(reg.status)}>{reg.status}</span></td>
+                                            <td style={{ padding: '12px', textAlign: 'center', whiteSpace: 'nowrap' }}>
+                                                <button onClick={() => setMatrizSelecionada(reg)} style={{ background: 'transparent', border: 'none', color: '#2563eb', cursor: 'pointer', marginRight: '8px', fontWeight: 'bold' }}>Ver</button>
+                                                {podeEditar(reg) && (
+                                                    <button onClick={() => onEditar && onEditar(reg)} style={{ background: 'transparent', border: 'none', color: '#0f766e', cursor: 'pointer', marginRight: '8px', fontWeight: 'bold' }}>
+                                                        {reg.status === 'APROVADO' ? 'Andamento' : 'Editar'}
+                                                    </button>
+                                                )}
+                                                {podeExcluir(reg) && (
+                                                    <button onClick={() => handleExcluir(reg.id)} style={{ background: 'transparent', border: 'none', color: '#dc2626', cursor: 'pointer', fontWeight: 'bold' }}>Excluir</button>
+                                                )}
+                                            </td>
+                                        </tr>
+                                    );
+                                })}
+                            </tbody>
+                        </table>
+                    </div>
                 ) : (
                     <div style={{ padding: '2rem', textAlign: 'center', color: '#94a3b8' }}>
-                        <h3 style={{ marginBottom: '1rem', color: '#1e293b' }}>Você ainda não possui nenhum rascunho.</h3>
-                        <p style={{ marginBottom: '1.5rem' }}>Salve um rascunho no formulário para continuar a trabalhar nele depois.</p>
+                        <h3 style={{ marginBottom: '1rem', color: '#1e293b' }}>
+                            {modo === 'rascunhos' ? 'Você não possui nenhum rascunho salvo.' : 'Nenhuma matriz encontrada.'}
+                        </h3>
+                        <p style={{ marginBottom: '1.5rem' }}>
+                            {modo === 'rascunhos'
+                                ? 'Salve um rascunho no formulário para continuar a trabalhar nele depois.'
+                                : 'Crie uma nova matriz a partir das ações estratégicas para começar.'}
+                        </p>
                         <button onClick={() => onNavigate('acoes')} style={{ background: '#2563eb', color: '#fff', border: 'none', padding: '0.75rem 1.2rem', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}>
                             Criar nova matriz
                         </button>
@@ -133,22 +217,41 @@ export function ConsultarMatrizes({ usuarioLogado, modo = 'todas', onNavigate, o
             {/* Modal de Detalhes da Matriz */}
             {matrizSelecionada && (
                 <div style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', background: 'rgba(0,0,0,0.5)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000, padding: '1rem' }}>
-                    <div style={{ background: '#fff', padding: '2rem', borderRadius: '8px', width: '100%', maxWidth: '600px', maxHeight: '90vh', overflowY: 'auto', position: 'relative' }}>
+                    <div style={{ background: '#fff', padding: '2rem', borderRadius: '8px', width: '100%', maxWidth: '650px', maxHeight: '90vh', overflowY: 'auto', position: 'relative' }}>
                         <span onClick={() => setMatrizSelecionada(null)} style={{ position: 'absolute', top: '15px', right: '20px', cursor: 'pointer', fontSize: '1.5rem', color: '#64748b' }}>&times;</span>
                         
                         <h3 style={{ marginTop: 0, color: '#1e293b', borderBottom: '1px solid #e2e8f0', paddingBottom: '10px' }}>Detalhes da Matriz: {matrizSelecionada.id}</h3>
                         
                         <p><strong>Nome:</strong> {matrizSelecionada.nome}</p>
+                        <p><strong>Autor:</strong> {matrizSelecionada.criadoPor?.email || (typeof matrizSelecionada.criadoPor === 'string' ? matrizSelecionada.criadoPor : '-')}</p>
                         <p><strong>O quê?:</strong> {matrizSelecionada.oque}</p>
                         <p><strong>Por quê?:</strong> {matrizSelecionada.porque}</p>
                         <p><strong>Onde?:</strong> {matrizSelecionada.onde}</p>
                         <p><strong>Quando?:</strong> {matrizSelecionada.quando}</p>
                         <p><strong>Como?:</strong> {matrizSelecionada.como}</p>
-                        <p><strong>Quanto?:</strong> {matrizSelecionada.quanto}</p>
-                        <p><strong>Impacto:</strong> {matrizSelecionada.impacto}</p>
-                        <p><strong>Progresso:</strong> {matrizSelecionada.percentual}%</p>
+                        <p><strong>Quanto?:</strong> {matrizSelecionada.quanto || '-'}</p>
+                        <p><strong>Impacto:</strong> {matrizSelecionada.impacto || '-'}</p>
+                        <p><strong>Progresso:</strong> {matrizSelecionada.percentual || 0}%</p>
                         <p><strong>Status atual:</strong> <span style={estiloBadgeStatus(matrizSelecionada.status)}>{matrizSelecionada.status}</span></p>
                         <p><strong>Parecer do Comitê:</strong> {matrizSelecionada.comentarioComite || '-'}</p>
+
+                        {/* Ações Vinculadas */}
+                        {Array.isArray(matrizSelecionada.acoes) && matrizSelecionada.acoes.length > 0 && (
+                            <div style={{ marginTop: '1.5rem', borderTop: '1px solid #e2e8f0', paddingTop: '1rem' }}>
+                                <h4 style={{ margin: '0 0 0.8rem 0', color: '#1e293b', fontSize: '0.95rem' }}>Ações Estratégicas Vinculadas</h4>
+                                {matrizSelecionada.acoes.map((item, idx) => (
+                                    <div key={item.acaoId || idx} style={{ background: '#f8fafc', padding: '0.75rem', borderRadius: '6px', marginBottom: '0.5rem', fontSize: '0.85rem' }}>
+                                        <p style={{ margin: '0 0 4px 0', fontWeight: 'bold', color: '#2563eb' }}>{item.acaoId} - {item.acao?.diretriz || ''}</p>
+                                        <p style={{ margin: '0 0 4px 0', color: '#64748b' }}>Setor: {item.acao?.setor || '-'} | Prazo: {item.acao?.prazo || '-'}</p>
+                                        {Array.isArray(item.etapas) && item.etapas.length > 0 && (
+                                            <p style={{ margin: 0, color: '#334155' }}>
+                                                Etapas concluídas: {item.etapas.filter(e => e.concluida).length} de {item.etapas.length} ({Math.round((item.etapas.filter(e => e.concluida).length / item.etapas.length) * 100)}%)
+                                            </p>
+                                        )}
+                                    </div>
+                                ))}
+                            </div>
+                        )}
 
                         <button onClick={() => setMatrizSelecionada(null)} style={{ background: '#2563eb', color: '#fff', border: 'none', padding: '0.6rem 1.2rem', borderRadius: '6px', cursor: 'pointer', marginTop: '1rem', width: '100%', fontWeight: 'bold' }}>
                             Fechar
@@ -161,12 +264,13 @@ export function ConsultarMatrizes({ usuarioLogado, modo = 'todas', onNavigate, o
 }
 
 function estiloBadgeStatus(status) {
+    const s = String(status || '').toUpperCase();
     let bg = '#e2e8f0';
     let color = '#475569';
-    if (status === 'Aprovado') { bg = '#dcfce7'; color = '#16a34a'; }
-    else if (status === 'Enviado') { bg = '#e0f2fe'; color = '#0284c7'; }
-    else if (status === 'Pendente') { bg = '#fee2e2'; color = '#dc2626'; }
-    else if (status === 'Rascunho') { bg = '#fef9c3'; color = '#ca8a04'; }
+    if (s === 'APROVADO') { bg = '#dcfce7'; color = '#16a34a'; }
+    else if (s === 'ENVIADO') { bg = '#e0f2fe'; color = '#0284c7'; }
+    else if (s === 'PENDENTE') { bg = '#fee2e2'; color = '#dc2626'; }
+    else if (s === 'RASCUNHO') { bg = '#fef9c3'; color = '#ca8a04'; }
 
     return {
         padding: '4px 8px',

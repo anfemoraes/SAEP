@@ -10,6 +10,7 @@ import { CreateMatrizDto } from './dto/create-matriz.dto';
 import { UpdateMatrizDto } from './dto/update-matriz.dto';
 import { AvaliarMatrizDto } from './dto/avaliar-matriz.dto';
 import { VotarMatrizDto } from './dto/votar-matriz.dto';
+import { AtualizarProgressoDto } from './dto/atualizar-progresso.dto';
 import { Status, Role, Prisma } from '@prisma/client';
 
 
@@ -308,6 +309,51 @@ export class MatrizesService {
       usuarioId: userId,
       acao: 'AVALIAR_MATRIZ',
       detalhes: `Avaliou a matriz ${matrizAtualizada.id} - ${matrizAtualizada.nome} como ${avaliarMatrizDto.status}`,
+    });
+
+    return matrizAtualizada;
+  }
+
+  async atualizarProgresso(id: string, dto: AtualizarProgressoDto, solicitante: UsuarioLogado) {
+    const matriz = await this.verificarPermissaoEdicao(id, solicitante);
+
+    if (matriz.status !== Status.APROVADO) {
+      throw new BadRequestException('Apenas matrizes aprovadas podem ter seu progresso atualizado');
+    }
+
+    if (dto.acoes && dto.acoes.length > 0) {
+      for (const item of dto.acoes) {
+        await this.prisma.acoesMatriz.upsert({
+          where: {
+            matrizId_acaoId: {
+              matrizId: id,
+              acaoId: item.acaoId,
+            },
+          },
+          update: {
+            etapas: (item.etapas ?? []) as Prisma.InputJsonValue,
+          },
+          create: {
+            matrizId: id,
+            acaoId: item.acaoId,
+            etapas: (item.etapas ?? []) as Prisma.InputJsonValue,
+          },
+        });
+      }
+    }
+
+    const matrizAtualizada = await this.prisma.matriz.update({
+      where: { id },
+      data: {
+        percentual: dto.percentual,
+      },
+      include: this.includeCompleto,
+    });
+
+    await this.logsService.create({
+      usuarioId: solicitante.id,
+      acao: 'ATUALIZAR_PROGRESSO',
+      detalhes: `Atualizou o progresso da matriz ${matrizAtualizada.id} - ${matrizAtualizada.nome} para ${dto.percentual}%`,
     });
 
     return matrizAtualizada;
