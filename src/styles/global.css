@@ -427,3 +427,322 @@ button, input, select, textarea {
         font-size: 0.95rem;
     }
 }
+
+/* ============================================================
+   BOTÕES GENÉRICOS
+   ============================================================ */
+
+.button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    border: 1px solid transparent;
+    border-radius: 14px;
+    font-weight: 700;
+    font-size: 0.95rem;
+    padding: 0.7rem 1.2rem;
+    cursor: pointer;
+    background: #f1f5f9;
+    color: #334155;
+    line-height: 1.1;
+    transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease, background 0.2s ease;
+    text-decoration: none;
+}
+
+.button:hover {
+    transform: translateY(-1px);
+}
+
+.button:focus {
+    outline: 2px solid #2563eb;
+    outline-offset: 2px;
+}
+
+.button:disabled,
+.button[aria-disabled="true"] {
+    opacity: 0.55;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
+.button-primary {
+    background: #2563eb;
+    color: #fff;
+    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.22);
+}
+
+.button-secondary {
+    background: #64748b;
+    color: #fff;
+    box-shadow: 0 4px 12px rgba(100, 116, 139, 0.22);
+}
+
+.button-tertiary {
+    background: #f8fafc;
+    color: #475569;
+    border-color: #e2e8f0;
+}
+
+.button-success {
+    background: #16a34a;
+    color: #fff;
+    box-shadow: 0 4px 12px rgba(22, 163, 74, 0.22);
+}
+
+.button-info {
+    background: #0284c7;
+    color: #fff;
+    box-shadow: 0 4px 12px rgba(2, 132, 199, 0.22);
+}
+
+.button-sm {
+    padding: 0.45rem 0.85rem;
+    font-size: 0.85rem;
+    border-radius: 10px;
+}
+
+.button-block {
+    width: 100%;
+}
+
+/* ============================================================
+   PAINEL DE ANDAMENTO / INDICADORES
+   ============================================================ */
+
+.painel-container {
+    padding: 2rem;
+    max-width: 1240px;
+    margin: 0 auto;
+}
+
+.painel-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+    flex-wrap: wrap;
+}
+
+.painel-eyebrow {
+    margin: 0;
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: #2563eb;
+    letter-spacing: 0.13em;
+    text-transform: uppercase;
+}
+
+.painel-title {
+    margin: 0.5rem 0 0 0;
+    font-size: clamp(1.8rem, 2.2vw, 2.3rem);
+    color: #0f172a;
+    line-height: 1.1;
+}
+
+.painel-subtitle {
+    margin: 0.75rem 0 0 0;
+    color: #475569;
+    font-size: 0.98rem;
+    line-height: 1.7;
+    max-width: 720px;
+}
+
+.painel-actions {
+    display: flex;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+/* Cards de métricas */
+.painel-metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 1.2rem;
+    margin-bottom: 2rem;
+}
+
+.painel-metric {
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-left: 5px solid #2563eb;
+    border-radius: 16px;
+    padding: 1.35rem 1.25rem;
+    box-shadow: 0 8px 20px rgba(15, 23, 42, 0.04);
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+}
+
+.painel-metric.is-azul-escuro { border-left-color: #0284c7; }
+.painel-metric.is-verde       { border-left-color: #16a34a; }
+.painel-metric.is-amarelo     { border-left-color: #ca8a04; }
+
+.painel-metric-icon {
+    font-size: 1.25rem;
+    color: #94a3b8;
+}
+
+.painel-metric-label {
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+}
+
+.painel-metric-value {
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: #0f172a;
+    line-height: 1.1;
+}
+
+/* Grid: Status | Acesso Rápido */
+.painel-grid-2 {
+    display: grid;
+    grid-template-columns: minmax(0, 1.3fr) minmax(280px, 1fr);
+    gap: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+/* Card genérico do painel */
+.painel-card {
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 16px;
+    padding: 1.5rem;
+    box-shadow: 0 8px 20px rgba(15, 23, 42, 0.04);
+}
+
+.painel-card-title {
+    margin: 0 0 1rem 0;
+    padding-bottom: 0.65rem;
+    border-bottom: 1px solid #e2e8f0;
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: #334155;
+}
+
+/* Lista de status */
+.painel-status-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+.painel-status-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.85rem 0.25rem;
+    border-bottom: 1px solid #f1f5f9;
+    font-size: 0.95rem;
+    color: #475569;
+}
+
+.painel-status-item:last-child {
+    border-bottom: none;
+}
+
+.painel-status-label {
+    display: flex;
+    align-items: center;
+    gap: 0.55rem;
+}
+
+.painel-status-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    display: inline-block;
+    flex-shrink: 0;
+}
+
+.painel-status-value {
+    font-weight: 700;
+}
+
+/* Card de Acesso Rápido */
+.painel-quick-actions {
+    display: grid;
+    gap: 0.75rem;
+}
+
+/* Estados (carregando / acesso restrito) */
+.painel-estado {
+    padding: 3.5rem 1.5rem;
+    text-align: center;
+    max-width: 560px;
+    margin: 0 auto;
+    color: #64748b;
+}
+
+.painel-estado-icon {
+    font-size: 2.8rem;
+    color: #94a3b8;
+    margin-bottom: 0.75rem;
+    display: block;
+}
+
+.painel-estado-title {
+    margin: 0 0 0.5rem 0;
+    font-size: 1.35rem;
+    color: #0f172a;
+}
+
+.painel-estado-text {
+    margin: 0;
+    font-size: 0.98rem;
+    line-height: 1.7;
+    color: #64748b;
+}
+
+/* Texto do card de transparência */
+.painel-text {
+    margin: 0;
+    color: #64748b;
+    font-size: 0.92rem;
+    line-height: 1.7;
+}
+
+/* Responsividade do painel */
+@media (max-width: 1024px) {
+    .painel-grid-2 {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 768px) {
+    .painel-container {
+        padding: 1.25rem;
+    }
+
+    .painel-header {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .painel-actions {
+        justify-content: stretch;
+        width: 100%;
+    }
+
+    .painel-actions .button {
+        flex: 1;
+        justify-content: center;
+    }
+
+    .painel-metric {
+        padding: 1.1rem 1rem;
+    }
+
+    .painel-metric-value {
+        font-size: 1.55rem;
+    }
+}
