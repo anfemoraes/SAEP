@@ -109,10 +109,19 @@ export function Header({ telas = {}, telaAtual, onNavigate, usuarioLogado, setUs
     return (
         <header className="header-container" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem 2rem', background: '#ffffff', borderBottom: '1px solid #e2e8f0', position: 'relative' }}>
             <div className="header-brand" onClick={() => handleNavigate(HOME)} style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <img src={logoImg} alt="Logo SISCETRAN" style={{ height: '35px', objectFit: 'contain' }} />
-                <span style={{ fontWeight: 'bold', fontSize: '1.2rem', color: '#1e293b' }}>
-                    SISCETRAN <span style={{ fontSize: '0.8rem', color: '#64748b', fontWeight: 'normal' }}>PETRANS</span>
-                </span>
+                <img
+                    src={logoImg}
+                    alt="Logo SISCETRAN"
+                    style={{
+                        height: '350px',
+                        width: 'auto',
+                        objectFit: 'contain',
+                        position: 'absolute',
+                        left: '2rem',
+                        top: '50%',
+                        transform: 'translateY(-50%)'
+    }}
+/>
             </div>
 
             {/* Menu Desktop */}
