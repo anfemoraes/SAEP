@@ -61,7 +61,6 @@ export function AcoesEstrategicas({ onSelecionarAcoes }) {
                 <div className="search-block">
                     <label htmlFor="busca-acao" className="sr-only">Buscar ações estratégicas</label>
                     <div className="search-input-group">
-                        <span className="search-icon">🔎</span>
                         <input
                             id="busca-acao"
                             type="text"
@@ -142,13 +141,10 @@ export function AcoesEstrategicas({ onSelecionarAcoes }) {
                 </div>
 
                 <div className="detail-panel">
-                    {selectedCount > 0 ? (
+                    {selectedCount > 0 && (
                         <div className="detail-card">
                             <div>
                                 <p className="detail-eyebrow">{selectedCount === 1 ? 'Ação selecionada' : 'Ações selecionadas'}</p>
-                                <h2 className="detail-title">
-                                    {selectedCount === 1 ? (selectedAction?.diretriz || selectedAction?.id) : 'Seleção múltipla ativa'}
-                                </h2>
                                 <p className="detail-text">{selectedAction?.setor ? `Setor responsável: ${selectedAction.setor}` : 'Setor responsável não atribuído.'}</p>
                                 <p className="detail-text"><strong>{selectedCount}</strong> ação{selectedCount > 1 ? 's selecionadas' : ' selecionada'}.</p>
                                 <div className="selected-actions-list">
@@ -159,29 +155,16 @@ export function AcoesEstrategicas({ onSelecionarAcoes }) {
                                     ))}
                                 </div>
                                 <div className="detail-note">
-                                    Use o botão fixo abaixo para iniciar a matriz 5W2H com a seleção atual.
+                                    Use o botão abaixo para iniciar a matriz 5W2H com a seleção atual.
                                 </div>
-                            </div>
-                        </div>
-                    ) : (
-                        <div className="detail-card blank-state">
-                            <div>
-                                <p className="detail-eyebrow">Sem seleção</p>
-                                <h2 className="detail-title">Selecione uma ação estratégica</h2>
-                                <p className="detail-text">Escolha uma ação da lista para iniciar o fluxo de planejamento da matriz 5W2H.</p>
+                                <button className="floating-action-button" onClick={handleAvancarParaDetalhar}>
+                                    Criar matriz ({selectedCount})
+                                </button>
                             </div>
                         </div>
                     )}
                 </div>
             </div>
-
-            {selectedCount > 0 && (
-                <div className="floating-action-button-container">
-                    <button className="floating-action-button" onClick={handleAvancarParaDetalhar}>
-                        Criar matriz ({selectedCount})
-                    </button>
-                </div>
-            )}
         </div>
     );
 }

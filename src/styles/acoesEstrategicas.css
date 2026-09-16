@@ -110,15 +110,17 @@
 
 .acoes-panel-grid {
     display: grid;
-    grid-template-columns: minmax(0, 1.6fr) minmax(280px, 1fr);
+    grid-template-columns: minmax(0, 4fr) minmax(280px, 1fr);
     gap: 1.5rem;
+    width: calc(100% + 50rem);
+    margin-left: -11rem;
 }
 
 .panel-card,
 .detail-card {
     background: #fff;
     border: 1px solid #e2e8f0;
-    border-radius: 24px;
+    border-radius: 30px;
     padding: 1.5rem;
     box-shadow: 0 12px 30px rgba(15, 23, 42, 0.06);
 }
@@ -230,6 +232,13 @@
 }
 
 .detail-card {
+    position: fixed;
+    right: 24px;
+    bottom: 24px;
+    z-index: 1100;
+    width: min(360px, calc(100vw - 48px));
+    max-height: calc(100vh - 48px);
+    overflow-y: auto;
     display: flex;
     flex-direction: column;
     justify-content: space-between;
@@ -340,39 +349,27 @@
     margin-bottom: 0.25rem;
 }
 
-.floating-action-button-container {
-    position: fixed;
-    bottom: 1.5rem;
-    right: 1.5rem;
-    z-index: 120;
-    display: flex;
-    justify-content: flex-end;
-    width: auto;
-}
-
 .floating-action-button {
+    display: block;
+    margin-left: auto;
+    margin-top: 12px;
+    margin-right: 52px;
+    height: auto;
     border: none;
     background: #2563eb;
     color: #fff;
-    padding: 0.95rem 1.6rem;
+    padding: 0.8rem 1.2rem;
     border-radius: 999px;
-    font-size: 0.95rem;
+    font-size: 0.9rem;
     font-weight: 700;
     cursor: pointer;
     box-shadow: 0 18px 40px rgba(37, 99, 235, 0.2);
     transition: transform 0.2s ease, background 0.2s ease;
-    min-width: 220px;
+    min-width: 190px;
 }
 
 @media (max-width: 640px) {
-    .floating-action-button-container {
-        position: static;
-        width: 100%;
-        margin-top: 1rem;
-    }
-
     .floating-action-button {
-        width: 100%;
         padding: 1rem;
     }
 }
@@ -425,6 +422,11 @@
         padding: 1.25rem;
     }
 
+    .acoes-panel-grid {
+        width: calc(100% + 2.5rem);
+        margin-left: -1.25rem;
+    }
+
     .acoes-estrategicas-header {
         gap: 1rem;
     }
@@ -455,6 +457,11 @@
 @media (max-width: 540px) {
     .acoes-estrategicas-page {
         padding: 1rem;
+    }
+
+    .acoes-panel-grid {
+        width: calc(100% + 2rem);
+        margin-left: -1rem;
     }
 
     .page-title {

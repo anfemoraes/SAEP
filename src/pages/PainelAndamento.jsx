@@ -1,28 +1,71 @@
 // src/pages/PainelAndamento.jsx
-import React from 'react';
-import { carregarBanco } from '../services/storage';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { listarMatrizes } from '../services/matrizes';
 import { acoesEstrategicas } from '../services/acoes_data';
 import { exportarMatrizesAprovadasCSV, exportarMatrizesAprovadasExcel } from '../services/exportService';
+import { ApiError } from '../services/api';
 import Swal from 'sweetalert2';
 
-export function PainelAndamento() {
-    const db = carregarBanco();
-    const registros = db.registros || [];
+const STATUS_INFO = {
+    RASCUNHO: { rotulo: 'Rascunhos salvos',                cor: '#fbbf24', corTexto: '#ca8a04' },
+    ENVIADO:  { rotulo: 'Aguardando Análise (Enviados)',   cor: '#38bdf8', corTexto: '#0284c7' },
+    APROVADO: { rotulo: 'Aprovados pelo Comitê',           cor: '#4ade80', corTexto: '#16a34a' },
+    PENDENTE: { rotulo: 'Pendentes / Ajustes solicitados', cor: '#f87171', corTexto: '#dc2626' }
+};
 
-    // Estatísticas gerais
+export function PainelAndamento({ usuarioLogado, onNavigate, telas }) {
+    const [matrizes, setMatrizes] = useState([]);
+    const [carregando, setCarregando] = useState(true);
+
+    const carregarDados = useCallback(async () => {
+        setCarregando(true);
+        try {
+            const dados = await listarMatrizes();
+            setMatrizes(Array.isArray(dados) ? dados : []);
+        } catch (err) {
+            const msg = err instanceof ApiError ? err.message : 'Não foi possível carregar as matrizes.';
+            Swal.fire({ icon: 'error', title: 'Erro ao carregar', text: msg, confirmButtonColor: '#2563eb' });
+        } finally {
+            setCarregando(false);
+        }
+    }, []);
+
+    useEffect(() => {
+        if (usuarioLogado) {
+            carregarDados();
+        } else {
+            setCarregando(false);
+        }
+    }, [carregarDados, usuarioLogado]);
+
     const totalAcoesBase = acoesEstrategicas.length;
-    const totalRegistros = registros.length;
-    const rascunhos = registros.filter(r => r.status === 'Rascunho').length;
-    const enviados = registros.filter(r => r.status === 'Enviado').length;
-    const aprovados = registros.filter(r => r.status === 'Aprovado').length;
-    const pendentes = registros.filter(r => r.status === 'Pendente').length;
+    const totalRegistros = matrizes.length;
 
-    // Cálculo da média de progresso das matrizes cadastradas
-    const somaProgresso = registros.reduce((acc, curr) => acc + (parseFloat(curr.percentual) || 0), 0);
-    const progressoMedio = totalRegistros > 0 ? (somaProgresso / totalRegistros).toFixed(1) : 0;
+    const contagem = useMemo(() => {
+        const base = { RASCUNHO: 0, ENVIADO: 0, APROVADO: 0, PENDENTE: 0 };
+        matrizes.forEach(m => {
+            if (base[m.status] !== undefined) base[m.status] += 1;
+        });
+        return base;
+    }, [matrizes]);
+
+    const somaProgresso = matrizes.reduce((acc, curr) => acc + (parseFloat(curr.percentual) || 0), 0);
+    const progressoMedio = totalRegistros > 0 ? (somaProgresso / totalRegistros).toFixed(1) : '0.0';
+
+    const dadosStatus = useMemo(() => (
+        Object.entries(STATUS_INFO).map(([chave, info]) => ({
+            chave,
+            rotulo: info.rotulo,
+            cor: info.cor,
+            corTexto: info.corTexto,
+            valor: contagem[chave] || 0
+        }))
+    ), [contagem]);
+
+    const isAdmin = (usuarioLogado?.role || '').toUpperCase() === 'ADMIN';
 
     const handleExportarCSV = () => {
-        const resultado = exportarMatrizesAprovadasCSV();
+        const resultado = exportarMatrizesAprovadasCSV(matrizes);
         if (resultado.sucesso) {
             Swal.fire({
                 icon: 'success',
@@ -32,17 +75,12 @@ export function PainelAndamento() {
                 showConfirmButton: false
             });
         } else {
-            Swal.fire({
-                icon: 'info',
-                title: 'Nada para exportar',
-                text: resultado.mensagem,
-                confirmButtonColor: '#2563eb'
-            });
+            Swal.fire({ icon: 'info', title: 'Nada para exportar', text: resultado.mensagem, confirmButtonColor: '#2563eb' });
         }
     };
 
     const handleExportarExcel = () => {
-        const resultado = exportarMatrizesAprovadasExcel();
+        const resultado = exportarMatrizesAprovadasExcel(matrizes);
         if (resultado.sucesso) {
             Swal.fire({
                 icon: 'success',
@@ -52,149 +90,136 @@ export function PainelAndamento() {
                 showConfirmButton: false
             });
         } else {
-            Swal.fire({
-                icon: 'info',
-                title: 'Nada para exportar',
-                text: resultado.mensagem,
-                confirmButtonColor: '#2563eb'
-            });
+            Swal.fire({ icon: 'info', title: 'Nada para exportar', text: resultado.mensagem, confirmButtonColor: '#2563eb' });
         }
     };
 
+    if (!usuarioLogado) {
+    return null;
+}
+
+    if (carregando) {
+        return (
+            <div className="painel-estado">
+                <i className="bi bi-arrow-repeat painel-estado-icon" aria-hidden="true"></i>
+                <p className="painel-estado-text">Carregando dados do painel...</p>
+            </div>
+        );
+    }
+
+    const semDados = totalRegistros === 0;
+
+    const acoesRapidas = [
+        { rotulo: 'Ações Estratégicas', tela: telas?.ACOES },
+        { rotulo: 'Minhas Matrizes',    tela: telas?.CONSULTAR },
+        { rotulo: 'Meus Rascunhos',     tela: telas?.RASCUNHOS },
+        { rotulo: 'Painel CETRAN 2030', tela: telas?.CETRAN2030 }
+    ].filter(a => a.tela);
+
     return (
-        <div style={{ padding: '2rem', maxWidth: '1200px', margin: '0 auto' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem', flexWrap: 'wrap', gap: '1rem' }}>
+        <div className="painel-container">
+            <div className="painel-header">
                 <div>
-                    <h2 style={{ color: '#1e293b', margin: 0 }}>Painel de Andamento e Indicadores</h2>
-                    <p style={{ color: '#64748b', fontSize: '0.9rem', margin: '4px 0 0 0' }}>Visão consolidada do progresso e monitoramento das matrizes 5W2H do PETRANS.</p>
+                    <p className="painel-eyebrow">Indicadores</p>
+                    <h2 className="painel-title">Painel de Andamento</h2>
+                    <p className="painel-subtitle">
+                        Visão consolidada do progresso e monitoramento das matrizes 5W2H do PETRANS.
+                    </p>
                 </div>
 
-                {/* Container dos dois botões de exportação */}
-                <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-                    <button 
-                        onClick={handleExportarCSV}
-                        style={{ 
-                            background: '#0284c7', 
-                            color: '#fff', 
-                            border: 'none', 
-                            padding: '0.6rem 1.2rem', 
-                            borderRadius: '6px', 
-                            fontWeight: 'bold', 
-                            cursor: 'pointer',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '8px',
-                            boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
-                        }}
-                    >
-                         Exportar CSV
-                    </button>
+                {isAdmin && (
+                    <div className="painel-actions">
+                        <button
+                            type="button"
+                            className="button button-info"
+                            onClick={handleExportarCSV}
+                            disabled={semDados}
+                        >
+                            <i className="bi bi-filetype-csv" aria-hidden="true"></i>
+                            Exportar CSV
+                        </button>
 
-                    <button 
-                        onClick={handleExportarExcel}
-                        style={{ 
-                            background: '#16a34a', 
-                            color: '#fff', 
-                            border: 'none', 
-                            padding: '0.6rem 1.2rem', 
-                            borderRadius: '6px', 
-                            fontWeight: 'bold', 
-                            cursor: 'pointer',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '8px',
-                            boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
-                        }}
-                    >
-                         Exportar Excel
-                    </button>
+                        <button
+                            type="button"
+                            className="button button-success"
+                            onClick={handleExportarExcel}
+                            disabled={semDados}
+                        >
+                            <i className="bi bi-file-earmark-excel" aria-hidden="true"></i>
+                            Exportar Excel
+                        </button>
+                    </div>
+                )}
+            </div>
+
+            <div className="painel-metrics-grid">
+                <div className="painel-metric">
+                    <i className="bi bi-diagram-3 painel-metric-icon" aria-hidden="true"></i>
+                    <span className="painel-metric-label">Ações Estratégicas Base</span>
+                    <span className="painel-metric-value">{totalAcoesBase}</span>
+                </div>
+
+                <div className="painel-metric is-azul-escuro">
+                    <i className="bi bi-clipboard-data painel-metric-icon" aria-hidden="true"></i>
+                    <span className="painel-metric-label">Matrizes Criadas</span>
+                    <span className="painel-metric-value">{totalRegistros}</span>
+                </div>
+
+                <div className="painel-metric is-verde">
+                    <i className="bi bi-check2-circle painel-metric-icon" aria-hidden="true"></i>
+                    <span className="painel-metric-label">Aprovadas pelo Comitê</span>
+                    <span className="painel-metric-value">{contagem.APROVADO}</span>
+                </div>
+
+                <div className="painel-metric is-amarelo">
+                    <i className="bi bi-graph-up-arrow painel-metric-icon" aria-hidden="true"></i>
+                    <span className="painel-metric-label">Progresso Médio Geral</span>
+                    <span className="painel-metric-value">{progressoMedio}%</span>
                 </div>
             </div>
 
-            {/* Cards de Métricas */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1.2rem', marginBottom: '2.5rem' }}>
-                <div style={estiloCardMetric('#f8fafc', '#2563eb')}>
-                    <span style={estiloTituloCard}>Ações Estratégicas Base</span>
-                    <h3 style={estiloValorCard}>{totalAcoesBase}</h3>
-                </div>
-                <div style={estiloCardMetric('#f8fafc', '#0284c7')}>
-                    <span style={estiloTituloCard}>Matrizes Criadas</span>
-                    <h3 style={estiloValorCard}>{totalRegistros}</h3>
-                </div>
-                <div style={estiloCardMetric('#f8fafc', '#16a34a')}>
-                    <span style={estiloTituloCard}>Aprovadas pelo Comitê</span>
-                    <h3 style={estiloValorCard}>{aprovados}</h3>
-                </div>
-                <div style={estiloCardMetric('#f8fafc', '#ca8a04')}>
-                    <span style={estiloTituloCard}>Progresso Médio Geral</span>
-                    <h3 style={estiloValorCard}>{progressoMedio}%</h3>
-                </div>
-            </div>
-
-            {/* Seção de Status Detalhado */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem', flexWrap: 'wrap' }}>
-                <div style={{ background: '#fff', padding: '1.5rem', borderRadius: '8px', border: '1px solid #e2e8f0', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
-                    <h3 style={{ color: '#334155', fontSize: '1.1rem', marginBottom: '1rem', borderBottom: '1px solid #e2e8f0', paddingBottom: '8px' }}>Status das Matrizes</h3>
-                    <ul style={{ listStyle: 'none', padding: 0, display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
-                        <li style={estiloItemStatus}>
-                            <span>Rascunhos salvos:</span>
-                            <strong style={{ color: '#ca8a04' }}>{rascunhos}</strong>
-                        </li>
-                        <li style={estiloItemStatus}>
-                            <span>Aguardando Análise (Enviados):</span>
-                            <strong style={{ color: '#0284c7' }}>{enviados}</strong>
-                        </li>
-                        <li style={estiloItemStatus}>
-                            <span>Aprovados pelo Comitê:</span>
-                            <strong style={{ color: '#16a34a' }}>{aprovados}</strong>
-                        </li>
-                        <li style={estiloItemStatus}>
-                            <span>Pendentes / Ajustes solicitados:</span>
-                            <strong style={{ color: '#dc2626' }}>{pendentes}</strong>
-                        </li>
+            <div className="painel-grid-2">
+                <div className="painel-card">
+                    <h3 className="painel-card-title">Status das Matrizes</h3>
+                    <ul className="painel-status-list">
+                        {dadosStatus.map(item => (
+                            <li key={item.chave} className="painel-status-item">
+                                <span className="painel-status-label">
+                                    <span className="painel-status-dot" style={{ background: item.cor }} />
+                                    {item.rotulo}
+                                </span>
+                                <span className="painel-status-value" style={{ color: item.corTexto }}>
+                                    {item.valor}
+                                </span>
+                            </li>
+                        ))}
                     </ul>
                 </div>
 
-                <div style={{ background: '#fff', padding: '1.5rem', borderRadius: '8px', border: '1px solid #e2e8f0', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
-                    <h3 style={{ color: '#334155', fontSize: '1.1rem', marginBottom: '1rem', borderBottom: '1px solid #e2e8f0', paddingBottom: '8px' }}>Transparência de Dados</h3>
-                    <p style={{ color: '#64748b', fontSize: '0.9rem', lineHeight: '1.6' }}>
-                        Os dados exibidos neste painel são calculados em tempo real com base nos registros locais salvos no navegador. As diretrizes seguem estritamente o planejamento estratégico do PETRANS / CETRAN-PA.
-                    </p>
+                <div className="painel-card">
+                    <h3 className="painel-card-title">Acesso Rápido</h3>
+                    <div className="painel-quick-actions">
+                        {acoesRapidas.map(acao => (
+                            <button
+                                key={acao.rotulo}
+                                type="button"
+                                className="button button-primary button-block"
+                                onClick={() => onNavigate?.(acao.tela)}
+                            >
+                                {acao.rotulo}
+                            </button>
+                        ))}
+                    </div>
                 </div>
+            </div>
+
+            <div className="painel-card">
+                <h3 className="painel-card-title">Transparência de Dados</h3>
+                <p className="painel-text">
+                    Os dados exibidos neste painel são carregados em tempo real da API do SISCETRAN.
+                    As diretrizes seguem estritamente o planejamento estratégico do PETRANS / CETRAN-PA.
+                </p>
             </div>
         </div>
     );
 }
-
-const estiloCardMetric = (bg, borderColor) => ({
-    background: bg,
-    padding: '1.5rem',
-    borderRadius: '8px',
-    border: `1px solid #e2e8f0`,
-    borderLeft: `5px solid ${borderColor}`,
-    boxShadow: '0 1px 3px rgba(0,0,0,0.05)'
-});
-
-const estiloTituloCard = {
-    fontSize: '0.85rem',
-    color: '#64748b',
-    fontWeight: '600',
-    textTransform: 'uppercase',
-    display: 'block',
-    marginBottom: '8px'
-};
-
-const estiloValorCard = {
-    fontSize: '1.8rem',
-    color: '#1e293b',
-    margin: 0
-};
-
-const estiloItemStatus = {
-    display: 'flex',
-    justifyContent: 'space-between',
-    padding: '0.5rem 0',
-    borderBottom: '1px solid #f1f5f9',
-    fontSize: '0.95rem',
-    color: '#475569'
-};

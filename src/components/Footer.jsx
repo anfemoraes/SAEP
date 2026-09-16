@@ -19,6 +19,25 @@ export function Footer() {
                 <p style={{ margin: 0 }}>
                     Conselho Estadual de Trânsito do Estado do Pará &copy; {new Date().getFullYear()} &mdash; Todos os direitos reservados.
                 </p>
+                <p
+                    title="Suporte técnico"
+                    aria-label="Suporte técnico"
+                    style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '0.4rem',
+                        border: 'none',
+                        background: 'transparent',
+                        color: '#2563eb',
+                        cursor: 'pointer',
+                        fontSize: '0.85rem',
+                        fontWeight: '600',
+                        padding: '0.25rem 0.5rem'
+                    }}
+                >
+                    <i className="bi bi-headset" aria-hidden="true"></i>
+                    Suporte técnico
+                </p>
             </div>
         </footer>
     );

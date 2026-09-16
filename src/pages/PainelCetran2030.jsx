@@ -1,5 +1,5 @@
 // src/pages/PainelCetran2030.jsx
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect, useCallback } from 'react';
 import {
     Chart as ChartJS,
     RadialLinearScale,
@@ -12,6 +12,9 @@ import {
 } from 'chart.js';
 import { Radar, Doughnut } from 'react-chartjs-2';
 import { agregarProgresso, rotuloCurto } from '../services/progresso';
+import { listarMatrizes } from '../services/matrizes';
+import { ApiError } from '../services/api';
+import Swal from 'sweetalert2';
 
 ChartJS.register(RadialLinearScale, ArcElement, PointElement, LineElement, Filler, Tooltip, Legend);
 
@@ -22,8 +25,6 @@ const corDoProgresso = (percentual) => {
 };
 
 // Plugin do Chart.js que desenha o percentual no centro da rosquinha (gauge).
-// Lê o valor de chart.options.plugins.textoCentral, que é passado via `options`
-// a cada render — assim funciona corretamente já na primeira pintura do canvas.
 const textoCentralPlugin = {
     id: 'textoCentral',
     afterDraw(chart) {
@@ -97,11 +98,31 @@ const estiloSelect = {
 };
 
 export function PainelCetran2030() {
-    const { objetivos, projetos, setores } = useMemo(() => agregarProgresso(), []);
+    const [matrizes, setMatrizes] = useState([]);
+    const [carregando, setCarregando] = useState(true);
 
     const [projetoSelecionadoA, setProjetoSelecionadoA] = useState(0);
-    const [projetoSelecionadoB, setProjetoSelecionadoB] = useState(Math.min(1, projetos.length - 1));
+    const [projetoSelecionadoB, setProjetoSelecionadoB] = useState(1);
     const [setorSelecionado, setSetorSelecionado] = useState(0);
+
+    const carregarDados = useCallback(async () => {
+        setCarregando(true);
+        try {
+            const dados = await listarMatrizes();
+            setMatrizes(Array.isArray(dados) ? dados : []);
+        } catch (err) {
+            const msg = err instanceof ApiError ? err.message : 'Não foi possível carregar os dados.';
+            Swal.fire({ icon: 'error', title: 'Erro ao carregar', text: msg, confirmButtonColor: '#2563eb' });
+        } finally {
+            setCarregando(false);
+        }
+    }, []);
+
+    useEffect(() => {
+        carregarDados();
+    }, [carregarDados]);
+
+    const { objetivos, projetos, setores } = useMemo(() => agregarProgresso(matrizes), [matrizes]);
 
     const dadosRadar = {
         labels: objetivos.map(o => rotuloCurto(o.chave)),
@@ -140,8 +161,16 @@ export function PainelCetran2030() {
     };
 
     const eixoAtualA = projetos[projetoSelecionadoA];
-    const eixoAtualB = projetos[projetoSelecionadoB];
+    const eixoAtualB = projetos[Math.min(projetoSelecionadoB, projetos.length - 1)];
     const setorAtual = setores[setorSelecionado];
+
+    if (carregando) {
+        return (
+            <div style={{ padding: '3rem', textAlign: 'center', color: '#64748b' }}>
+                <p>Carregando dados do painel...</p>
+            </div>
+        );
+    }
 
     return (
         <div style={{ padding: '2rem', maxWidth: '1180px', margin: '0 auto' }}>
@@ -181,7 +210,7 @@ export function PainelCetran2030() {
                     eyebrow="Projeto"
                     titulo={eixoAtualB ? eixoAtualB.rotulo : '—'}
                     seletor={
-                        <select style={estiloSelect} value={projetoSelecionadoB} onChange={(e) => setProjetoSelecionadoB(Number(e.target.value))}>
+                        <select style={estiloSelect} value={Math.min(projetoSelecionadoB, projetos.length - 1)} onChange={(e) => setProjetoSelecionadoB(Number(e.target.value))}>
                             {projetos.map((projeto, i) => (
                                 <option key={projeto.chave} value={i}>{projeto.rotulo}</option>
                             ))}

@@ -10,7 +10,10 @@ import { CreateMatrizDto } from './dto/create-matriz.dto';
 import { UpdateMatrizDto } from './dto/update-matriz.dto';
 import { AvaliarMatrizDto } from './dto/avaliar-matriz.dto';
 import { VotarMatrizDto } from './dto/votar-matriz.dto';
-import { Status, Role } from '@prisma/client';
+import { AtualizarProgressoDto } from './dto/atualizar-progresso.dto';
+import { Status, Role, Prisma } from '@prisma/client';
+
+
 
 interface UsuarioLogado {
   id: string;
@@ -88,9 +91,10 @@ export class MatrizesService {
   }
 
   async create(createMatrizDto: CreateMatrizDto, userId: string) {
-    const { acoesIds, ...dados } = createMatrizDto;
+    const { acoes, ...dados } = createMatrizDto;
 
-    if (acoesIds && acoesIds.length > 0) {
+    if (acoes && acoes.length > 0) {
+      const acoesIds = acoes.map((a) => a.acaoId);
       const acoesExistentes = await this.prisma.acao.findMany({
         where: { id: { in: acoesIds } },
       });
@@ -105,8 +109,8 @@ export class MatrizesService {
         ...dados,
         criadoPorId: userId,
         acoes:
-          acoesIds && acoesIds.length > 0
-            ? { create: acoesIds.map((acaoId) => ({ acaoId })) }
+          acoes && acoes.length > 0
+            ? { create: acoes.map((a) => ({ acaoId: a.acaoId, etapas: (a.etapas ?? []) as Prisma.InputJsonValue })) }
             : undefined,
       },
       include: this.includeCompleto,
@@ -152,12 +156,12 @@ export class MatrizesService {
       throw new BadRequestException('Matriz já enviada ou aprovada não pode ser editada');
     }
 
-    const { acoesIds, ...dados } = updateMatrizDto;
+    const { acoes, ...dados } = updateMatrizDto;
 
-    let acoesUpdate: { create: { acaoId: string }[] } | undefined = undefined;
-    if (acoesIds) {
+    let acoesUpdate: { create: { acaoId: string; etapas: Prisma.InputJsonValue }[] } | undefined = undefined;
+    if (acoes) {
       await this.prisma.acoesMatriz.deleteMany({ where: { matrizId: id } });
-      acoesUpdate = { create: acoesIds.map((acaoId) => ({ acaoId })) };
+      acoesUpdate = { create: acoes.map((a) => ({ acaoId: a.acaoId, etapas: (a.etapas ?? []) as Prisma.InputJsonValue })) };
     }
 
     const matrizAtualizada = await this.prisma.matriz.update({
@@ -305,6 +309,51 @@ export class MatrizesService {
       usuarioId: userId,
       acao: 'AVALIAR_MATRIZ',
       detalhes: `Avaliou a matriz ${matrizAtualizada.id} - ${matrizAtualizada.nome} como ${avaliarMatrizDto.status}`,
+    });
+
+    return matrizAtualizada;
+  }
+
+  async atualizarProgresso(id: string, dto: AtualizarProgressoDto, solicitante: UsuarioLogado) {
+    const matriz = await this.verificarPermissaoEdicao(id, solicitante);
+
+    if (matriz.status !== Status.APROVADO) {
+      throw new BadRequestException('Apenas matrizes aprovadas podem ter seu progresso atualizado');
+    }
+
+    if (dto.acoes && dto.acoes.length > 0) {
+      for (const item of dto.acoes) {
+        await this.prisma.acoesMatriz.upsert({
+          where: {
+            matrizId_acaoId: {
+              matrizId: id,
+              acaoId: item.acaoId,
+            },
+          },
+          update: {
+            etapas: (item.etapas ?? []) as Prisma.InputJsonValue,
+          },
+          create: {
+            matrizId: id,
+            acaoId: item.acaoId,
+            etapas: (item.etapas ?? []) as Prisma.InputJsonValue,
+          },
+        });
+      }
+    }
+
+    const matrizAtualizada = await this.prisma.matriz.update({
+      where: { id },
+      data: {
+        percentual: dto.percentual,
+      },
+      include: this.includeCompleto,
+    });
+
+    await this.logsService.create({
+      usuarioId: solicitante.id,
+      acao: 'ATUALIZAR_PROGRESSO',
+      detalhes: `Atualizou o progresso da matriz ${matrizAtualizada.id} - ${matrizAtualizada.nome} para ${dto.percentual}%`,
     });
 
     return matrizAtualizada;

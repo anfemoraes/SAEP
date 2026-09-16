@@ -38,3 +38,9 @@ export function votarMatriz(id, voto, comentario) {
 export function avaliarMatriz(id, status, comentario) {
   return api.post(`/matrizes/${id}/avaliar`, { status, comentario });
 }
+
+/** Atualizar etapas e percentual de matriz aprovada */
+export function atualizarProgressoMatriz(id, dados) {
+  return api.patch(`/matrizes/${id}/progresso`, dados);
+}
+

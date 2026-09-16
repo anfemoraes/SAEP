@@ -3,6 +3,7 @@ import {
   Get,
   Post,
   Put,
+  Patch,
   Delete,
   Body,
   Param,
@@ -19,6 +20,7 @@ import { CreateMatrizDto } from './dto/create-matriz.dto';
 import { UpdateMatrizDto } from './dto/update-matriz.dto';
 import { AvaliarMatrizDto } from './dto/avaliar-matriz.dto';
 import { VotarMatrizDto } from './dto/votar-matriz.dto';
+import { AtualizarProgressoDto } from './dto/atualizar-progresso.dto';
 import {
   ApiBearerAuth,
   ApiTags,
@@ -118,5 +120,18 @@ export class MatrizesController {
     @Request() req: any,
   ) {
     return this.matrizesService.avaliar(id, avaliarMatrizDto, req.user.id);
+  }
+
+  @Patch(':id/progresso')
+  @Roles(Role.USUARIO, Role.ADMIN_SETOR, Role.ADMIN_GERAL)
+  @ApiOperation({ summary: 'Atualizar etapas e progresso de matriz aprovada' })
+  @ApiResponse({ status: 200, description: 'Progresso atualizado com sucesso' })
+  @ApiResponse({ status: 400, description: 'Matriz não está aprovada ou dados inválidos' })
+  async atualizarProgresso(
+    @Param('id') id: string,
+    @Body() dto: AtualizarProgressoDto,
+    @Request() req: any,
+  ) {
+    return this.matrizesService.atualizarProgresso(id, dto, req.user);
   }
 }
