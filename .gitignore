@@ -12,6 +12,8 @@ dist
 dist-ssr
 *.local
 
+analytics-service/.env
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
