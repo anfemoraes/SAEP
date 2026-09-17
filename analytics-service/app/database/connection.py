@@ -4,9 +4,12 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-DATABASE_URL = os.getenv("DATABASE_URL")
-
 async def get_db_connection():
-    url = DATABASE_URL.replace("postgresql://", "postgres://")
-    # statement_cache_size=0 resolve o erro do PgBouncer no Supabase
-    return await asyncpg.connect(url, statement_cache_size=0)
+    url = os.getenv("DATABASE_URL")
+    if not url:
+        raise ValueError("DATABASE_URL não configurada no arquivo .env")
+    
+    url = url.strip('"\'')
+    
+    # Se a URL contiver a porta 6543 (pooler) ou 5432, garante conexão resiliente sem prepared statements
+    return await asyncpg.connect(url, statement_cache_size=0, timeout=10)
