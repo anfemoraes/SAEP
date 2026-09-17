@@ -11,24 +11,12 @@ import { Footer } from './components/Footer';
 import { PainelAndamento } from './pages/PainelAndamento';
 import { PainelCetran2030 } from './pages/PainelCetran2030';
 
-const estiloBotaoMenuHome = {
-    background: '#2563eb',
-    color: '#fff',
-    padding: '0.7rem 1.3rem',
-    fontSize: '0.95rem',
-    border: 'none',
-    borderRadius: '6px',
-    cursor: 'pointer',
-    fontWeight: '600'
-};
-
 const TELAS = {
     HOME: 'home',
     ACOES: 'acoes',
     FORMULARIO: 'formulario',
     CONSULTAR: 'consultar',
     RASCUNHOS: 'rascunhos',
-    ANDAMENTO: 'andamento',
     CETRAN2030: 'cetran2030',
     COMITE: 'comite',
     ADMIN: 'admin'
@@ -51,7 +39,7 @@ export default function App() {
     // Opção A: quando o usuário faz login (null -> usuário), cai direto no painel.
     useEffect(() => {
         if (usuarioLogado && estavaDeslogadoRef.current) {
-            setTelaAtual(TELAS.ANDAMENTO);
+            setTelaAtual(TELAS.HOME);
         }
         estavaDeslogadoRef.current = !usuarioLogado;
     }, [usuarioLogado]);
@@ -88,27 +76,11 @@ export default function App() {
         switch (telaAtual) {
             case TELAS.HOME:
                 return (
-                    <div>
-                        <PainelAndamento
-                            usuarioLogado={usuarioLogado}
-                            onNavigate={(tela) => setTelaAtual(tela)}
-                            telas={TELAS}
-                        />
-
-                        {usuarioLogado && (
-                            <div style={{ maxWidth: '1100px', margin: '0 auto', padding: '0 2rem 3rem' }}>
-                                <h2 style={{ fontSize: '1.1rem', color: '#334155', marginBottom: '1rem', textAlign: 'center' }}>
-                                    Acesso rápido
-                                </h2>
-                                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.8rem', justifyContent: 'center' }}>
-                                    <button className="button" onClick={() => setTelaAtual(TELAS.ACOES)} style={estiloBotaoMenuHome}>Ações Estratégicas</button>
-                                    <button className="button" onClick={() => setTelaAtual(TELAS.CONSULTAR)} style={estiloBotaoMenuHome}>Minhas Matrizes</button>
-                                    <button className="button" onClick={() => setTelaAtual(TELAS.RASCUNHOS)} style={estiloBotaoMenuHome}>Meus Rascunhos</button>
-                                    <button className="button" onClick={() => setTelaAtual(TELAS.CETRAN2030)} style={estiloBotaoMenuHome}>Painel CETRAN 2030</button>
-                                </div>
-                            </div>
-                        )}
-                    </div>
+                    <PainelAndamento
+                        usuarioLogado={usuarioLogado}
+                        onNavigate={(tela) => setTelaAtual(tela)}
+                        telas={TELAS}
+                    />
                 );
             case TELAS.ACOES:
                 return (
@@ -134,14 +106,6 @@ export default function App() {
                 return <ConsultarMatrizes usuarioLogado={usuarioLogado} modo="rascunhos" onNavigate={(tela) => setTelaAtual(tela)} onEditar={(registro) => abrirFormularioEdicao(registro, TELAS.RASCUNHOS)} />;
             case TELAS.COMITE:
                 return <PainelComite usuarioLogado={usuarioLogado} />;
-            case TELAS.ANDAMENTO:
-                return (
-                    <PainelAndamento
-                        usuarioLogado={usuarioLogado}
-                        onNavigate={(tela) => setTelaAtual(tela)}
-                        telas={TELAS}
-                    />
-                );
             case TELAS.CETRAN2030:
                 return <PainelCetran2030 />;
             case TELAS.ADMIN:

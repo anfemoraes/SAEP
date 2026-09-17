@@ -8,13 +8,32 @@ import {
     desativarUsuario,
     atualizarRoleUsuario
 } from '../services/usuarios';
+import { importarAcoes } from '../services/acoes';
 import { acoesEstrategicas } from '../services/acoes_data';
 import { ApiError } from '../services/api';
 import Swal from 'sweetalert2';
 
 const ROLES = ['USUARIO', 'ADMIN_SETOR', 'COMITE', 'ADMIN_GERAL'];
+const PRAZOS = [
+    { valor: 'CURTO_PRAZO', rotulo: 'Curto Prazo' },
+    { valor: 'MEDIO_PRAZO', rotulo: 'Médio Prazo' },
+    { valor: 'LONGO_PRAZO', rotulo: 'Longo Prazo' }
+];
 
 const formVazio = { email: '', senha: '', role: 'USUARIO', setor: '' };
+const acaoVazia = {
+    id: '',
+    diretriz: '',
+    prazo: 'CURTO_PRAZO',
+    meta: '',
+    indicador: '',
+    linhaPlanilha: '',
+    og: '',
+    lae: '',
+    setor: '',
+    responsavel: '',
+    restricoes: ''
+};
 
 export function PainelAdmin({ usuarioLogado }) {
     const [usuarios, setUsuarios] = useState([]);
@@ -23,6 +42,9 @@ export function PainelAdmin({ usuarioLogado }) {
     const [mostrarForm, setMostrarForm] = useState(false);
     const [form, setForm] = useState(formVazio);
     const [busca, setBusca] = useState('');
+    const [mostrarFormAcoes, setMostrarFormAcoes] = useState(false);
+    const [acoesForm, setAcoesForm] = useState([{ ...acaoVazia }]);
+    const [enviandoAcoes, setEnviandoAcoes] = useState(false);
 
     const carregarUsuarios = useCallback(async () => {
         setCarregando(true);
@@ -117,6 +139,72 @@ export function PainelAdmin({ usuarioLogado }) {
         } catch (err) {
             const msg = err instanceof ApiError ? err.message : 'Erro ao alterar role.';
             Swal.fire({ icon: 'error', title: 'Erro', text: msg, confirmButtonColor: '#2563eb' });
+        }
+    };
+
+    const podeGerenciarUsuario = (usuario) => (
+        usuario.id !== usuarioLogado?.id &&
+        !(usuarioLogado?.role === 'ADMIN_SETOR' && usuario.role === 'ADMIN_GERAL')
+    );
+
+    const atualizarAcaoForm = (indice, campo, valor) => {
+        setAcoesForm(linhas => linhas.map((linha, index) => (
+            index === indice ? { ...linha, [campo]: valor } : linha
+        )));
+    };
+
+    const adicionarLinhaAcao = () => {
+        setAcoesForm(linhas => [...linhas, { ...acaoVazia }]);
+    };
+
+    const removerLinhaAcao = (indice) => {
+        setAcoesForm(linhas => linhas.length === 1 ? linhas : linhas.filter((_, index) => index !== indice));
+    };
+
+    const handleImportarAcoes = async (e) => {
+        e.preventDefault();
+        const camposObrigatorios = ['id', 'diretriz', 'meta', 'indicador', 'linhaPlanilha'];
+        const acaoInvalida = acoesForm.find(linha => (
+            camposObrigatorios.some(campo => !String(linha[campo]).trim()) ||
+            !Number.isInteger(Number(linha.linhaPlanilha))
+        ));
+
+        if (acaoInvalida) {
+            Swal.fire({ icon: 'warning', title: 'Dados incompletos', text: 'Preencha ID, diretriz, meta, indicador e uma linha de planilha inteira para cada ação.', confirmButtonColor: '#2563eb' });
+            return;
+        }
+
+        setEnviandoAcoes(true);
+        try {
+            const resultado = await importarAcoes(acoesForm.map(linha => {
+                const acao = { ...linha, linhaPlanilha: Number(linha.linhaPlanilha) };
+                Object.keys(acao).forEach(campo => {
+                    if (typeof acao[campo] === 'string') acao[campo] = acao[campo].trim();
+                    if (acao[campo] === '') delete acao[campo];
+                });
+                return acao;
+            }));
+
+            if (resultado.erro > 0) {
+                Swal.fire({
+                    icon: resultado.sucesso > 0 ? 'warning' : 'error',
+                    title: resultado.sucesso > 0 ? 'Importação parcial' : 'Nenhuma ação adicionada',
+                    text: `${resultado.sucesso} adicionada(s) e ${resultado.erro} com erro. ${resultado.erros?.join(' ') || ''}`,
+                    confirmButtonColor: '#2563eb'
+                });
+            } else {
+                Swal.fire({ icon: 'success', title: 'Ações adicionadas!', text: `${resultado.sucesso} ação(ões) adicionada(s) com sucesso.`, timer: 2000, showConfirmButton: false });
+            }
+
+            if (resultado.sucesso > 0) {
+                setAcoesForm([{ ...acaoVazia }]);
+                setMostrarFormAcoes(false);
+            }
+        } catch (err) {
+            const msg = err instanceof ApiError ? err.message : 'Erro ao adicionar ações.';
+            Swal.fire({ icon: 'error', title: 'Erro', text: msg, confirmButtonColor: '#2563eb' });
+        } finally {
+            setEnviandoAcoes(false);
         }
     };
 
@@ -242,7 +330,7 @@ export function PainelAdmin({ usuarioLogado }) {
                                             </span>
                                         </td>
                                         <td style={{ padding: '12px', textAlign: 'center', display: 'flex', gap: '0.5rem', justifyContent: 'center' }}>
-                                            {u.id !== usuarioLogado?.id && (
+                                            {podeGerenciarUsuario(u) && (
                                                 <>
                                                     <button
                                                         onClick={() => handleToggleAtivo(u)}
@@ -269,9 +357,60 @@ export function PainelAdmin({ usuarioLogado }) {
 
             {/* Seção de Ações Estratégicas Base */}
             <div>
-                <h3 style={{ color: '#334155', borderBottom: '1px solid #e2e8f0', paddingBottom: '8px', marginBottom: '1rem' }}>
-                    Ações Estratégicas Base Integradas ({acoesEstrategicas.length})
-                </h3>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '1rem', flexWrap: 'wrap', borderBottom: '1px solid #e2e8f0', paddingBottom: '8px', marginBottom: '1rem' }}>
+                    <h3 style={{ color: '#334155', margin: 0 }}>
+                        Ações Estratégicas Base Integradas ({acoesEstrategicas.length})
+                    </h3>
+                    {usuarioLogado?.role === 'ADMIN_GERAL' && (
+                        <button
+                            type="button"
+                            onClick={() => setMostrarFormAcoes(v => !v)}
+                            style={{ background: '#16a34a', color: '#fff', border: 'none', padding: '0.5rem 1rem', borderRadius: '8px', fontWeight: 600, cursor: 'pointer' }}
+                        >
+                            {mostrarFormAcoes ? 'Fechar' : '+ Adicionar ações'}
+                        </button>
+                    )}
+                </div>
+
+                {mostrarFormAcoes && usuarioLogado?.role === 'ADMIN_GERAL' && (
+                    <form onSubmit={handleImportarAcoes} style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '10px', padding: '1rem', marginBottom: '1.5rem' }}>
+                        <p style={{ color: '#475569', fontSize: '0.9rem', marginTop: 0 }}>Adicione uma ou várias ações de uma vez. Os campos com * são obrigatórios.</p>
+                        {acoesForm.map((linha, indice) => (
+                            <div key={indice} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '0.75rem', padding: '1rem 0', borderTop: '1px solid #e2e8f0' }}>
+                                <CampoAcao label="ID *" value={linha.id} onChange={valor => atualizarAcaoForm(indice, 'id', valor)} placeholder="AE 1.1.1.1" />
+                                <CampoAcao label="Linha da planilha *" type="number" value={linha.linhaPlanilha} onChange={valor => atualizarAcaoForm(indice, 'linhaPlanilha', valor)} />
+                                <CampoAcao label="Diretriz *" value={linha.diretriz} onChange={valor => atualizarAcaoForm(indice, 'diretriz', valor)} />
+                                <CampoAcao label="Meta *" value={linha.meta} onChange={valor => atualizarAcaoForm(indice, 'meta', valor)} />
+                                <CampoAcao label="Indicador *" value={linha.indicador} onChange={valor => atualizarAcaoForm(indice, 'indicador', valor)} />
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem' }}>
+                                    <label style={estiloLabel}>Prazo *</label>
+                                    <select value={linha.prazo} onChange={e => atualizarAcaoForm(indice, 'prazo', e.target.value)} style={estiloInput}>
+                                        {PRAZOS.map(prazo => <option key={prazo.valor} value={prazo.valor}>{prazo.rotulo}</option>)}
+                                    </select>
+                                </div>
+                                <CampoAcao label="OG" value={linha.og} onChange={valor => atualizarAcaoForm(indice, 'og', valor)} />
+                                <CampoAcao label="LAE" value={linha.lae} onChange={valor => atualizarAcaoForm(indice, 'lae', valor)} />
+                                <CampoAcao label="Setor" value={linha.setor} onChange={valor => atualizarAcaoForm(indice, 'setor', valor)} />
+                                <CampoAcao label="Responsável" value={linha.responsavel} onChange={valor => atualizarAcaoForm(indice, 'responsavel', valor)} />
+                                <CampoAcao label="Restrições" value={linha.restricoes} onChange={valor => atualizarAcaoForm(indice, 'restricoes', valor)} />
+                                <div style={{ display: 'flex', alignItems: 'flex-end' }}>
+                                    <button type="button" onClick={() => removerLinhaAcao(indice)} disabled={acoesForm.length === 1} style={{ color: '#dc2626', background: '#fff', border: '1px solid #fecaca', borderRadius: '6px', padding: '0.55rem 0.8rem', cursor: acoesForm.length === 1 ? 'not-allowed' : 'pointer' }}>
+                                        Remover linha
+                                    </button>
+                                </div>
+                            </div>
+                        ))}
+                        <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
+                            <button type="button" onClick={adicionarLinhaAcao} style={{ background: '#fff', color: '#2563eb', border: '1px solid #93c5fd', padding: '0.55rem 1rem', borderRadius: '8px', fontWeight: 600, cursor: 'pointer' }}>
+                                + Outra ação
+                            </button>
+                            <button type="submit" disabled={enviandoAcoes} style={{ background: '#16a34a', color: '#fff', border: 'none', padding: '0.55rem 1rem', borderRadius: '8px', fontWeight: 600, cursor: enviandoAcoes ? 'wait' : 'pointer' }}>
+                                {enviandoAcoes ? 'Adicionando...' : 'Adicionar ações'}
+                            </button>
+                        </div>
+                    </form>
+                )}
+
                 <div style={{ background: '#fff', borderRadius: '8px', border: '1px solid #e2e8f0', overflow: 'auto', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
                     <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.9rem' }}>
                         <thead>
@@ -295,6 +434,15 @@ export function PainelAdmin({ usuarioLogado }) {
                     </table>
                 </div>
             </div>
+        </div>
+    );
+}
+
+function CampoAcao({ label, type = 'text', value, onChange, placeholder }) {
+    return (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem' }}>
+            <label style={estiloLabel}>{label}</label>
+            <input type={type} value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder} style={estiloInput} />
         </div>
     );
 }

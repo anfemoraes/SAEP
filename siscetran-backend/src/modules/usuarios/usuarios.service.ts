@@ -217,6 +217,10 @@ export class UsuariosService {
       throw new ForbiddenException('Você só pode ativar/desativar usuários do seu setor');
     }
 
+    if (solicitante.role === Role.ADMIN_SETOR && usuario.role === Role.ADMIN_GERAL) {
+      throw new ForbiddenException('Admin de setor não pode ativar/desativar um Admin Geral');
+    }
+
     if (usuario.id === solicitante.id) {
       throw new BadRequestException('Você não pode ativar/desativar a própria conta');
     }
@@ -239,6 +243,10 @@ export class UsuariosService {
 
     if (solicitante.role === Role.ADMIN_SETOR && usuario.setor !== solicitante.setor) {
       throw new ForbiddenException('Você só pode remover usuários do seu setor');
+    }
+
+    if (solicitante.role === Role.ADMIN_SETOR && usuario.role === Role.ADMIN_GERAL) {
+      throw new ForbiddenException('Admin de setor não pode remover um Admin Geral');
     }
 
     const matrizes = await this.prisma.matriz.count({

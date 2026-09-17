@@ -15,12 +15,11 @@ export function Header({ telas = {}, telaAtual, onNavigate, usuarioLogado, setUs
     const [mostrarSenha, setMostrarSenha] = useState(false);
     const dropdownRef = useRef(null);
 
-    const {
+        const {
         HOME = 'home',
         ACOES = 'acoes',
         CONSULTAR = 'consultar',
         RASCUNHOS = 'rascunhos',
-        ANDAMENTO = 'andamento',
         CETRAN2030 = 'cetran2030',
         COMITE = 'comite',
         ADMIN = 'admin'
@@ -131,7 +130,6 @@ export function Header({ telas = {}, telaAtual, onNavigate, usuarioLogado, setUs
                         <button className="button" onClick={() => handleNavigate(ACOES)} style={estiloBotaoNav(telaAtual === ACOES)}>Ações Estratégicas</button>
                         <button className="button" onClick={() => handleNavigate(CONSULTAR)} style={estiloBotaoNav(telaAtual === CONSULTAR)}>Minhas Matrizes</button>
                         <button className="button" onClick={() => handleNavigate(RASCUNHOS)} style={estiloBotaoNav(telaAtual === RASCUNHOS)}>Meus Rascunhos</button>
-                        <button className="button" onClick={() => handleNavigate(ANDAMENTO)} style={estiloBotaoNav(telaAtual === ANDAMENTO)}>Andamento</button>
                         <button className="button" onClick={() => handleNavigate(CETRAN2030)} style={estiloBotaoNav(telaAtual === CETRAN2030)}>Painel CETRAN 2030</button>
                     </>
                 )}

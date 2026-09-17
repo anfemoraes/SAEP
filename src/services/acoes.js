@@ -18,6 +18,10 @@ export function criarAcao(dados) {
   return api.post('/acoes', dados);
 }
 
+export function importarAcoes(acoes) {
+  return api.post('/acoes/importar', acoes);
+}
+
 export function atualizarAcao(id, dados) {
   return api.put(`/acoes/${encodeURIComponent(id)}`, dados);
 }

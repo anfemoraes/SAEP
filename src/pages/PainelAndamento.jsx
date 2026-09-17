@@ -4,6 +4,7 @@ import { listarMatrizes } from '../services/matrizes';
 import { acoesEstrategicas } from '../services/acoes_data';
 import { exportarMatrizesAprovadasCSV, exportarMatrizesAprovadasExcel } from '../services/exportService';
 import { ApiError } from '../services/api';
+import { ehAdmin } from '../services/permissoes';
 import Swal from 'sweetalert2';
 
 const STATUS_INFO = {
@@ -62,9 +63,11 @@ export function PainelAndamento({ usuarioLogado, onNavigate, telas }) {
         }))
     ), [contagem]);
 
-    const isAdmin = (usuarioLogado?.role || '').toUpperCase() === 'ADMIN';
+    const isAdmin = ehAdmin(usuarioLogado);
 
     const handleExportarCSV = () => {
+        if (!isAdmin) return;
+
         const resultado = exportarMatrizesAprovadasCSV(matrizes);
         if (resultado.sucesso) {
             Swal.fire({
@@ -80,6 +83,8 @@ export function PainelAndamento({ usuarioLogado, onNavigate, telas }) {
     };
 
     const handleExportarExcel = () => {
+        if (!isAdmin) return;
+
         const resultado = exportarMatrizesAprovadasExcel(matrizes);
         if (resultado.sucesso) {
             Swal.fire({
@@ -95,8 +100,16 @@ export function PainelAndamento({ usuarioLogado, onNavigate, telas }) {
     };
 
     if (!usuarioLogado) {
-    return null;
-}
+        return (
+            <div className="painel-estado">
+                <i className="bi bi-lock-fill painel-estado-icon" aria-hidden="true"></i>
+                <h2 className="painel-estado-title">Acesso restrito</h2>
+                <p className="painel-estado-text">
+                    Faça login no topo da página para visualizar os indicadores e o andamento das matrizes.
+                </p>
+            </div>
+        );
+    }
 
     if (carregando) {
         return (
