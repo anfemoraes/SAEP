@@ -1,6 +1,6 @@
 // src/pages/PainelComite.jsx
 import React, { useState, useEffect, useCallback } from 'react';
-import { listarPendentes, votarComite, avaliarComite, estatisticasComite } from '../services/comite';
+import { listarPendentes, votarComite, avaliarComite, estatisticasComite, buscarHistoricoComite } from '../services/comite';
 import Swal from 'sweetalert2';
 
 export function PainelComite({ usuarioLogado }) {
@@ -9,6 +9,8 @@ export function PainelComite({ usuarioLogado }) {
     const [carregando, setCarregando] = useState(true);
     const [enviando, setEnviando] = useState(false);
     const [matrizEmAvaliacao, setMatrizEmAvaliacao] = useState(null);
+    const [historicoMatriz, setHistoricoMatriz] = useState(null);
+    const [carregandoHistorico, setCarregandoHistorico] = useState(false);
 
     const ehAdminGeral = usuarioLogado?.role === 'ADMIN_GERAL';
 
@@ -43,8 +45,17 @@ export function PainelComite({ usuarioLogado }) {
         carregarDados();
     }, [carregarDados]);
 
-    const abrirModalAvaliacao = (matriz) => {
+    const abrirModalAvaliacao = async (matriz) => {
         setMatrizEmAvaliacao(matriz);
+        setHistoricoMatriz(null);
+        setCarregandoHistorico(true);
+        try {
+            setHistoricoMatriz(await buscarHistoricoComite(matriz.id));
+        } catch (error) {
+            console.error('Erro ao carregar histórico da matriz:', error);
+        } finally {
+            setCarregandoHistorico(false);
+        }
         if (ehAdminGeral) {
             setDecisao('APROVADO');
         } else {
@@ -267,6 +278,65 @@ export function PainelComite({ usuarioLogado }) {
                                     <div style={estiloInfoItem}><span style={estiloInfoLabel}>Autor</span><span style={estiloInfoValue}>{matrizEmAvaliacao.criadoPor?.email || (typeof matrizEmAvaliacao.criadoPor === 'string' ? matrizEmAvaliacao.criadoPor : '-')}</span></div>
                                     <div style={estiloInfoItem}><span style={estiloInfoLabel}>Setor responsável</span><span style={estiloInfoValue}>{matrizEmAvaliacao.criadoPor?.setor || matrizEmAvaliacao.setor || '-'}</span></div>
                                 </div>
+                            </section>
+
+                            <section style={{ display: 'grid', gap: '0.85rem', borderRadius: '16px', padding: '1.25rem', border: '1px solid #e2e8f0' }}>
+                                <div>
+                                    <h3 style={{ margin: 0, color: '#0f172a', fontSize: '1.1rem' }}>Histórico de revisões</h3>
+                                    <p style={{ margin: '0.45rem 0 0', color: '#64748b', lineHeight: 1.6 }}>
+                                        Revisões anteriores permanecem disponíveis para consulta e não podem ser alteradas.
+                                    </p>
+                                </div>
+                                {carregandoHistorico ? (
+                                    <p style={{ margin: 0, color: '#64748b' }}>Carregando revisões...</p>
+                                ) : historicoMatriz?.revisoes?.length ? (
+                                    <div style={{ display: 'grid', gap: '0.65rem' }}>
+                                        {[...historicoMatriz.revisoes].reverse().map((revisao) => {
+                                            const numeroRevisaoAtual = Math.max(...historicoMatriz.revisoes.map(item => item.numero));
+                                            const revisaoAtual = revisao.numero === numeroRevisaoAtual;
+                                            return (
+                                                <div key={revisao.id} style={{ background: revisaoAtual ? '#eff6ff' : '#f8fafc', border: `1px solid ${revisaoAtual ? '#60a5fa' : '#e2e8f0'}`, borderLeft: `4px solid ${revisaoAtual ? '#2563eb' : '#94a3b8'}`, borderRadius: '10px', padding: '0.9rem 1rem' }}>
+                                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
+                                                        <strong style={{ color: '#0f172a' }}>Revisão {revisao.numero}</strong>
+                                                        <span style={{ ...estiloBadgeStatus(revisaoAtual ? 'ENVIADO' : 'RASCUNHO'), backgroundColor: revisaoAtual ? '#dbeafe' : '#e2e8f0', color: revisaoAtual ? '#1d4ed8' : '#475569' }}>
+                                                            {revisaoAtual ? 'Atual' : 'Somente leitura'}
+                                                        </span>
+                                                    </div>
+                                                    <p style={{ margin: '0.45rem 0 0', color: '#64748b', fontSize: '0.88rem' }}>
+                                                        {Array.isArray(revisao.votos) ? `${revisao.votos.length} voto(s) registrado(s)` : 'Nenhum voto registrado'}
+                                                        {revisao.criadoEm ? ` · ${new Date(revisao.criadoEm).toLocaleDateString('pt-BR')}` : ''}
+                                                    </p>
+                                                    {revisao.observacao && <p style={{ margin: '0.45rem 0 0', color: '#475569', fontSize: '0.88rem' }}>{revisao.observacao}</p>}
+                                                    {Array.isArray(revisao.votos) && revisao.votos.length > 0 ? (
+                                                        <div style={{ display: 'grid', gap: '0.6rem', marginTop: '0.85rem' }}>
+                                                            {revisao.votos.map((voto) => (
+                                                                <div key={voto.id} style={{ background: '#fff', border: '1px solid #dbe3ee', borderRadius: '9px', padding: '0.8rem 0.9rem' }}>
+                                                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
+                                                                        <strong style={{ color: '#0f172a', fontSize: '0.9rem' }}>{voto.usuario?.email || 'Conselheiro'}</strong>
+                                                                        <span style={{ fontWeight: 700, fontSize: '0.82rem', color: voto.voto === 'APROVAR' ? '#15803d' : '#b91c1c' }}>
+                                                                            {voto.voto === 'APROVAR' ? 'APROVAR' : 'REJEITAR'}
+                                                                        </span>
+                                                                    </div>
+                                                                    <p style={{ margin: '0.55rem 0 0', color: '#64748b', fontSize: '0.76rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                                                                        Parecer pessoal
+                                                                        {voto.createdAt ? ` · ${new Date(voto.createdAt).toLocaleDateString('pt-BR')}` : ''}
+                                                                    </p>
+                                                                    <p style={{ margin: '0.3rem 0 0', color: '#475569', fontSize: '0.88rem', lineHeight: 1.55, whiteSpace: 'pre-wrap' }}>
+                                                                        {voto.comentario || 'Nenhum parecer registrado.'}
+                                                                    </p>
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                    ) : (
+                                                        <p style={{ margin: '0.85rem 0 0', color: '#64748b', fontSize: '0.88rem' }}>Nenhum voto ou parecer registrado nesta revisão.</p>
+                                                    )}
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                ) : (
+                                    <p style={{ margin: 0, color: '#64748b' }}>Nenhuma revisão disponível.</p>
+                                )}
                             </section>
 
                             <section style={{ display: 'grid', gap: '1rem', borderRadius: '16px', padding: '1.25rem', border: '1px solid #e2e8f0' }}>

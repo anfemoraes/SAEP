@@ -18,6 +18,10 @@ export function buscarMatrizComite(id) {
   return api.get(`/comite/matrizes/${id}`);
 }
 
+export function buscarHistoricoComite(id) {
+  return api.get(`/comite/matrizes/${id}/historico`);
+}
+
 export function votarComite(id, voto, comentario) {
   return api.post(`/comite/matrizes/${id}/votar`, { voto, comentario });
 }

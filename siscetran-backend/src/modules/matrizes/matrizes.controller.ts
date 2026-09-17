@@ -57,6 +57,13 @@ export class MatrizesController {
     return this.matrizesService.findOne(id, req.user);
   }
 
+  @Get(':id/historico')
+  @ApiOperation({ summary: 'Obter histórico de revisões e votos da matriz' })
+  @ApiResponse({ status: 200, description: 'Histórico retornado com sucesso' })
+  async getHistorico(@Param('id') id: string, @Request() req: any) {
+    return this.matrizesService.getHistorico(id, req.user);
+  }
+
   @Post()
   @Roles(Role.USUARIO, Role.COMITE, Role.ADMIN_SETOR, Role.ADMIN_GERAL)
   @ApiOperation({ summary: 'Criar nova matriz' })

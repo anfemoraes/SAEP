@@ -2,12 +2,19 @@ import {
   Injectable,
   NotFoundException,
   BadRequestException,
+  ForbiddenException,
 } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { LogsService } from '../logs/logs.service';
 import { AvaliarMatrizDto } from '../matrizes/dto/avaliar-matriz.dto';
 import { VotarMatrizDto } from '../matrizes/dto/votar-matriz.dto';
-import { Status } from '@prisma/client';
+import { Role, Status } from '@prisma/client';
+
+interface UsuarioLogado {
+  id: string;
+  role: Role;
+  setor?: string | null;
+}
 
 @Injectable()
 export class ComiteService {
@@ -16,19 +23,43 @@ export class ComiteService {
     private logsService: LogsService,
   ) {}
 
-  private readonly includeCompleto = {
+  private readonly includeMatriz = {
     criadoPor: { select: { id: true, email: true, setor: true } },
     avaliadoPor: { select: { id: true, email: true } },
     acoes: { include: { acao: true } },
-    votos: { include: { usuario: { select: { id: true, email: true, role: true } } } },
   };
 
+  private readonly includeComVotosAtuais = {
+    ...this.includeMatriz,
+    revisoes: {
+      orderBy: { numero: 'desc' as const },
+      take: 1,
+      include: {
+        votos: {
+          include: {
+            usuario: { select: { id: true, email: true, role: true } },
+          },
+        },
+      },
+    },
+  };
+
+  private comVotosAtuais(matriz: any) {
+    const { revisoes, ...dadosMatriz } = matriz;
+    return {
+      ...dadosMatriz,
+      votos: revisoes?.[0]?.votos ?? [],
+    };
+  }
+
   async getPendentes() {
-    return this.prisma.matriz.findMany({
+    const matrizes = await this.prisma.matriz.findMany({
       where: { status: Status.ENVIADO },
-      include: this.includeCompleto,
+      include: this.includeComVotosAtuais,
       orderBy: { dataCriacao: 'asc' },
     });
+
+    return matrizes.map((matriz) => this.comVotosAtuais(matriz));
   }
 
   async getEstatisticas() {
@@ -63,24 +94,26 @@ export class ComiteService {
       where.status = status;
     }
 
-    return this.prisma.matriz.findMany({
+    const matrizes = await this.prisma.matriz.findMany({
       where,
-      include: this.includeCompleto,
+      include: this.includeComVotosAtuais,
       orderBy: { dataCriacao: 'desc' },
     });
+
+    return matrizes.map((matriz) => this.comVotosAtuais(matriz));
   }
 
   async getMatriz(id: string) {
     const matriz = await this.prisma.matriz.findUnique({
       where: { id },
-      include: this.includeCompleto,
+      include: this.includeComVotosAtuais,
     });
 
     if (!matriz) {
       throw new NotFoundException('Matriz não encontrada');
     }
 
-    return matriz;
+    return this.comVotosAtuais(matriz);
   }
 
   /**
@@ -97,16 +130,27 @@ export class ComiteService {
       throw new BadRequestException('Apenas matrizes enviadas podem receber votos');
     }
 
+    const revisao = await this.prisma.matrizRevisao.findFirst({
+      where: { matrizId: id },
+      orderBy: { numero: 'desc' },
+    });
+
+    if (!revisao) {
+      throw new BadRequestException('Não existe revisão ativa para esta matriz');
+    }
+
     const voto = await this.prisma.voto.upsert({
       where: {
-        matrizId_usuarioId: { matrizId: id, usuarioId },
+        revisaoId_usuarioId: { revisaoId: revisao.id, usuarioId },
       },
       update: {
+        matrizId: id,
         voto: votarMatrizDto.voto,
         comentario: votarMatrizDto.comentario,
       },
       create: {
         matrizId: id,
+        revisaoId: revisao.id,
         usuarioId,
         voto: votarMatrizDto.voto,
         comentario: votarMatrizDto.comentario,
@@ -119,7 +163,7 @@ export class ComiteService {
     await this.logsService.create({
       usuarioId,
       acao: 'VOTAR_MATRIZ',
-      detalhes: `Votou "${votarMatrizDto.voto}" na matriz ${id}`,
+      detalhes: `Votou "${votarMatrizDto.voto}" na matriz ${id} na revisão ${revisao.numero}`,
     });
 
     return voto;
@@ -147,7 +191,7 @@ export class ComiteService {
         avaliadoPorId: userId,
         dataAvaliacao: new Date(),
       },
-      include: this.includeCompleto,
+      include: this.includeComVotosAtuais,
     });
 
     await this.logsService.create({
@@ -156,6 +200,42 @@ export class ComiteService {
       detalhes: `Matriz ${matrizAtualizada.id} - ${matrizAtualizada.nome} avaliada como ${avaliarMatrizDto.status}`,
     });
 
-    return matrizAtualizada;
+    return this.comVotosAtuais(matrizAtualizada);
+  }
+
+  async getHistorico(id: string, solicitante: UsuarioLogado) {
+    const matriz = await this.prisma.matriz.findUnique({
+      where: { id },
+      include: this.includeMatriz,
+    });
+
+    if (!matriz) {
+      throw new NotFoundException('Matriz não encontrada');
+    }
+
+    if (solicitante.role === Role.USUARIO && matriz.criadoPorId !== solicitante.id) {
+      throw new ForbiddenException('Você não tem permissão para visualizar esta matriz');
+    }
+
+    if (
+      solicitante.role === Role.ADMIN_SETOR &&
+      matriz.criadoPor?.setor !== solicitante.setor
+    ) {
+      throw new ForbiddenException('Você não tem permissão para visualizar esta matriz');
+    }
+
+    const revisoes = await this.prisma.matrizRevisao.findMany({
+      where: { matrizId: id },
+      orderBy: { numero: 'asc' },
+      include: {
+        votos: {
+          include: {
+            usuario: { select: { id: true, email: true, role: true } },
+          },
+        },
+      },
+    });
+
+    return { matriz, revisoes };
   }
 }

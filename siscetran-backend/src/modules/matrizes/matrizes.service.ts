@@ -35,6 +35,19 @@ export class MatrizesService {
     votos: { include: { usuario: { select: { id: true, email: true, role: true } } } },
   };
 
+  private async obterRevisaoAtual(matrizId: string) {
+    const revisao = await this.prisma.matrizRevisao.findFirst({
+      where: { matrizId },
+      orderBy: { numero: 'desc' },
+    });
+
+    if (!revisao) {
+      throw new BadRequestException('Não existe revisão ativa para esta matriz');
+    }
+
+    return revisao;
+  }
+
   async findAll(status: Status | undefined, solicitante: UsuarioLogado, usuarioId?: string) {
     const where: any = {};
 
@@ -217,6 +230,42 @@ export class MatrizesService {
       throw new BadRequestException('Matriz já foi aprovada');
     }
 
+    const revisaoAtual = await this.prisma.matrizRevisao.findFirst({
+      where: { matrizId: id },
+      orderBy: { numero: 'desc' },
+      include: { _count: { select: { votos: true } } },
+    });
+
+    const proximoNumero = revisaoAtual ? revisaoAtual.numero + 1 : 1;
+
+    if (matriz.status === Status.PENDENTE) {
+      // Reenvio real após pendência: sempre cria uma nova revisão.
+      await this.prisma.matrizRevisao.create({
+        data: {
+          matrizId: id,
+          numero: proximoNumero,
+          criadoPorId: userId,
+        },
+      });
+    } else if (matriz.status === Status.RASCUNHO && (!revisaoAtual || revisaoAtual._count.votos === 0)) {
+      // Primeira submissão real. Se já existe uma revisão vazia (ex: placeholder
+      // criado pelo backfill de migração para matrizes antigas), reaproveita ela
+      // em vez de criar uma segunda revisão sem voto nenhum.
+      if (!revisaoAtual) {
+        await this.prisma.matrizRevisao.create({
+          data: {
+            matrizId: id,
+            numero: 1,
+            criadoPorId: userId,
+          },
+        });
+      }
+    }
+
+    const numeroRevisaoFinal = (matriz.status === Status.RASCUNHO && revisaoAtual && revisaoAtual._count.votos === 0)
+      ? revisaoAtual.numero
+      : proximoNumero;
+
     const matrizAtualizada = await this.prisma.matriz.update({
       where: { id },
       data: { status: Status.ENVIADO },
@@ -226,7 +275,7 @@ export class MatrizesService {
     await this.logsService.create({
       usuarioId: userId,
       acao: 'ENVIAR_MATRIZ',
-      detalhes: `Enviou a matriz ${matrizAtualizada.id} - ${matrizAtualizada.nome} para o comitê`,
+      detalhes: `Enviou a matriz ${matrizAtualizada.id} - ${matrizAtualizada.nome} para o comitê (revisão ${numeroRevisaoFinal})`,
     });
 
     return matrizAtualizada;
@@ -248,19 +297,23 @@ export class MatrizesService {
       throw new BadRequestException('Apenas matrizes enviadas podem receber votos');
     }
 
+    const revisao = await this.obterRevisaoAtual(id);
+
     const voto = await this.prisma.voto.upsert({
       where: {
-        matrizId_usuarioId: {
-          matrizId: id,
+        revisaoId_usuarioId: {
+          revisaoId: revisao.id,
           usuarioId: solicitante.id,
         },
       },
       update: {
+        matrizId: id,
         voto: votarMatrizDto.voto,
         comentario: votarMatrizDto.comentario,
       },
       create: {
         matrizId: id,
+        revisaoId: revisao.id,
         usuarioId: solicitante.id,
         voto: votarMatrizDto.voto,
         comentario: votarMatrizDto.comentario,
@@ -273,7 +326,7 @@ export class MatrizesService {
     await this.logsService.create({
       usuarioId: solicitante.id,
       acao: 'VOTAR_MATRIZ',
-      detalhes: `Votou "${votarMatrizDto.voto}" na matriz ${id}`,
+      detalhes: `Votou "${votarMatrizDto.voto}" na matriz ${id} na revisão ${revisao.numero}`,
     });
 
     return voto;
@@ -357,5 +410,26 @@ export class MatrizesService {
     });
 
     return matrizAtualizada;
+  }
+
+  async getHistorico(id: string, solicitante: UsuarioLogado) {
+    const matriz = await this.findOne(id, solicitante);
+
+    const revisoes = await this.prisma.matrizRevisao.findMany({
+      where: { matrizId: id },
+      orderBy: { numero: 'asc' },
+      include: {
+        votos: {
+          include: {
+            usuario: { select: { id: true, email: true, role: true } },
+          },
+        },
+      },
+    });
+
+    return {
+      matriz,
+      revisoes,
+    };
   }
 }

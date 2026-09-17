@@ -62,6 +62,14 @@ export class ComiteController {
     return this.comiteService.getMatriz(id);
   }
 
+  @Get('matrizes/:id/historico')
+  @Roles(Role.USUARIO, Role.ADMIN_SETOR, Role.COMITE, Role.ADMIN_GERAL)
+  @ApiOperation({ summary: 'Obter histórico de revisões e votos da matriz' })
+  @ApiResponse({ status: 200, description: 'Histórico retornado com sucesso' })
+  async getHistorico(@Param('id') id: string, @Request() req: any) {
+    return this.comiteService.getHistorico(id, req.user);
+  }
+
   @Post('matrizes/:id/votar')
   @ApiOperation({ summary: 'Registrar voto consultivo (Conselheiro ou Admin Geral)' })
   @ApiResponse({ status: 200, description: 'Voto registrado com sucesso' })
