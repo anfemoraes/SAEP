@@ -9,7 +9,6 @@ import { MatrizesModule } from './modules/matrizes/matrizes.module';
 import { AcoesModule } from './modules/acoes/acoes.module';
 import { ComiteModule } from './modules/comite/comite.module';
 import { DashboardModule } from './modules/dashboard/dashboard.module';
-import { LogsModule } from './modules/logs/logs.module';
 
 @Module({
   imports: [
@@ -30,7 +29,6 @@ import { LogsModule } from './modules/logs/logs.module';
     AcoesModule,
     ComiteModule,
     DashboardModule,
-    LogsModule,
   ],
 })
 export class AppModule {}
