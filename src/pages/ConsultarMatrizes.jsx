@@ -181,14 +181,33 @@ export function ConsultarMatrizes({ usuarioLogado, modo = 'todas', onNavigate, o
                                             <td style={{ padding: '12px' }}>{reg.percentual || 0}%</td>
                                             <td style={{ padding: '12px' }}><span style={estiloBadgeStatus(reg.status)}>{reg.status}</span></td>
                                             <td style={{ padding: '12px', textAlign: 'center', whiteSpace: 'nowrap' }}>
-                                                <button onClick={() => setMatrizSelecionada(reg)} style={{ background: 'transparent', border: 'none', color: '#2563eb', cursor: 'pointer', marginRight: '8px', fontWeight: 'bold' }}>Ver</button>
+                                                <button
+                                                    onClick={() => setMatrizSelecionada(reg)}
+                                                    title="Ver matriz"
+                                                    aria-label="Ver matriz"
+                                                    style={{ background: 'transparent', border: 'none', color: '#2563eb', cursor: 'pointer', marginRight: '8px', fontWeight: 'bold', fontSize: '1.1rem' }}
+                                                >
+                                                    <i className="bi bi-eye-fill" aria-hidden="true" />
+                                                </button>
                                                 {podeEditar(reg) && (
-                                                    <button onClick={() => onEditar && onEditar(reg)} style={{ background: 'transparent', border: 'none', color: '#0f766e', cursor: 'pointer', marginRight: '8px', fontWeight: 'bold' }}>
-                                                        {reg.status === 'APROVADO' ? 'Andamento' : 'Editar'}
+                                                    <button
+                                                        onClick={() => onEditar && onEditar(reg)}
+                                                        title={reg.status === 'APROVADO' ? 'Andamento da matriz' : 'Editar matriz'}
+                                                        aria-label={reg.status === 'APROVADO' ? 'Andamento da matriz' : 'Editar matriz'}
+                                                        style={{ background: 'transparent', border: 'none', color: '#558BC9', cursor: 'pointer', marginRight: '8px', fontWeight: 'bold', fontSize: '1.1rem' }}
+                                                    >
+                                                        <i className={reg.status === 'APROVADO' ? 'bi bi-file-text' : 'bi bi-pencil-square'} aria-hidden="true" />
                                                     </button>
                                                 )}
                                                 {podeExcluir(reg) && (
-                                                    <button onClick={() => handleExcluir(reg.id)} style={{ background: 'transparent', border: 'none', color: '#dc2626', cursor: 'pointer', fontWeight: 'bold' }}>Excluir</button>
+                                                    <button
+                                                        onClick={() => handleExcluir(reg.id)}
+                                                        title="Excluir matriz"
+                                                        aria-label="Excluir matriz"
+                                                        style={{ background: 'transparent', border: 'none', color: '#dc2626', cursor: 'pointer', fontWeight: 'bold', fontSize: '1.1rem' }}
+                                                    >
+                                                        <i className="bi bi-trash3-fill" aria-hidden="true" />
+                                                    </button>
                                                 )}
                                             </td>
                                         </tr>

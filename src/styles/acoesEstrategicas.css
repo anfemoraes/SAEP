@@ -202,6 +202,10 @@
     font-weight: 700;
 }
 
+.prazo-cell {
+    width: 140px;
+}
+
 .diretriz-cell {
     color: #0f172a;
     line-height: 1.6;

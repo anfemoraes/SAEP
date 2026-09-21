@@ -95,7 +95,7 @@ export function AcoesEstrategicas({ onSelecionarAcoes }) {
                                     <th className="check-cell">Sel.</th>
                                     <th className="id-cell">ID</th>
                                     <th>Diretriz Estratégica</th>
-                                    <th>Prazo</th>
+                                    <th className="prazo-cell">Prazo</th>
                                     <th>Setor Responsável</th>
                                 </tr>
                             </thead>
@@ -118,7 +118,7 @@ export function AcoesEstrategicas({ onSelecionarAcoes }) {
                                                 </td>
                                                 <td className="id-cell">{acao.id}</td>
                                                 <td className="diretriz-cell">{acao.diretriz || 'Não especificada'}</td>
-                                                <td>
+                                                <td className="prazo-cell">
                                                     <span className={`prazo-badge ${prazoClasse}`}>{acao.prazo || 'Não definido'}</span>
                                                 </td>
                                                 <td>{acao.setor || acao.responsavel || 'Não atribuído'}</td>

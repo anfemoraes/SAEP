@@ -62,7 +62,7 @@ model Voto {
 }
 
 model Matriz {
-  id               String        @id @default(cuid())
+  id               String        @id
   nome             String
   oque             String
   porque           String

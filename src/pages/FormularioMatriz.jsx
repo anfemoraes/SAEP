@@ -34,6 +34,8 @@ export function FormularioMatriz({
     const [acoesComEtapas, setAcoesComEtapas] = useState([]);
     const [statusAtual, setStatusAtual] = useState('RASCUNHO');
     const [comentarioComite, setComentarioComite] = useState('');
+    const [mostrarDetalhesMatriz, setMostrarDetalhesMatriz] = useState(false);
+    const [modoEdicaoEtapas, setModoEdicaoEtapas] = useState(false);
 
     const parseCurrencyInput = (valor) => {
         if (!valor) return 0;
@@ -390,217 +392,105 @@ export function FormularioMatriz({
                 </div>
             )}
 
-            {!podeEditar && statusAtual !== 'PENDENTE' && (
-                <div className="formulario-alert-card" style={{ backgroundColor: '#fef3c7', borderColor: '#f59e0b' }}>
-                    <p className="alert-title">Matriz {statusAtual.toLowerCase()}</p>
-                    <p className="alert-text">Esta matriz não pode mais ser editada. Apenas visualização.</p>
-                </div>
-            )}
-
             <form onSubmit={enviarParaComite} className="formulario-form">
-                <section className="formulario-section">
-                    <div className="section-header">
-                        <div>
-                            <span className="section-number">01</span>
-                            <h2 className="section-title">Nome da ação</h2>
-                        </div>
-                        <p className="section-description">Título que identifica a matriz e o projeto.</p>
-                    </div>
-                    <div>
-                        <label className="formulario-label" htmlFor="nome">
-                            Nome da Ação / Projeto <span className="required">*</span>
-                        </label>
-                        <input 
-                            id="nome" 
-                            type="text" 
-                            value={nome} 
-                            onChange={(e) => setNome(e.target.value)} 
-                            required 
-                            className="formulario-input" 
-                            placeholder="Ex: Modernização de Servidores"
-                            disabled={!podeEditar}
-                        />
-                    </div>
-                </section>
-
-                <section className="formulario-section">
-                    <div className="section-header">
-                        <div>
-                            <span className="section-number">02</span>
-                            <h2 className="section-title">O quê?</h2>
-                        </div>
-                        <p className="section-description">Descreva com clareza o que será feito.</p>
-                    </div>
-                    <label className="formulario-label" htmlFor="oque">
-                        O quê? (Descrição detalhada) <span className="required">*</span>
-                    </label>
-                    <textarea 
-                        id="oque" 
-                        rows="5" 
-                        value={oque} 
-                        onChange={(e) => setOque(e.target.value)} 
-                        required 
-                        className="formulario-textarea" 
-                        placeholder="O que será feito..."
-                        disabled={!podeEditar}
-                    />
-                </section>
-
-                <section className="formulario-section">
-                    <div className="section-header">
-                        <div>
-                            <span className="section-number">03</span>
-                            <h2 className="section-title">Por quê?</h2>
-                        </div>
-                        <p className="section-description">Explique a justificativa e objetivos da ação.</p>
-                    </div>
-                    <label className="formulario-label" htmlFor="porque">
-                        Por quê? (Justificativa) <span className="required">*</span>
-                    </label>
-                    <textarea 
-                        id="porque" 
-                        rows="5" 
-                        value={porque} 
-                        onChange={(e) => setPorque(e.target.value)} 
-                        required 
-                        className="formulario-textarea" 
-                        placeholder="Por que essa ação é necessária..."
-                        disabled={!podeEditar}
-                    />
-                </section>
-
-                <section className="formulario-section formulario-grid-2">
-                    <div>
-                        <div className="section-header section-header-small">
-                            <span className="section-number">04</span>
-                            <h2 className="section-title">Onde?</h2>
-                        </div>
-                        <label className="formulario-label" htmlFor="onde">
-                            Onde? (Local de execução) <span className="required">*</span>
-                        </label>
-                        <input 
-                            id="onde" 
-                            type="text" 
-                            value={onde} 
-                            onChange={(e) => setOnde(e.target.value)} 
-                            required 
-                            className="formulario-input" 
-                            placeholder="Ex: Sede do Cetran/PA"
-                            disabled={!podeEditar}
-                        />
-                    </div>
-                    <div>
-                        <div className="section-header section-header-small">
-                            <span className="section-number">05</span>
-                            <h2 className="section-title">Quando?</h2>
-                        </div>
-                        <label className="formulario-label" htmlFor="quando">
-                            Quando? (Prazo / Data limite) <span className="required">*</span>
-                        </label>
-                        <input 
-                            id="quando" 
-                            type="date" 
-                            value={quando} 
-                            onChange={(e) => setQuando(e.target.value)} 
-                            required 
-                            className="formulario-input"
-                            disabled={!podeEditar}
-                        />
-                    </div>
-                </section>
-
-                <section className="formulario-section">
-                    <div className="section-header">
-                        <div>
-                            <span className="section-number">06</span>
-                            <h2 className="section-title">Como?</h2>
-                        </div>
-                        <p className="section-description">Detalhe a metodologia, passos e estratégia.</p>
-                    </div>
-                    <label className="formulario-label" htmlFor="como">
-                        Como? (Metodologia / Passos) <span className="required">*</span>
-                    </label>
-                    <textarea 
-                        id="como" 
-                        rows="5" 
-                        value={como} 
-                        onChange={(e) => setComo(e.target.value)} 
-                        required 
-                        className="formulario-textarea" 
-                        placeholder="Como será executado..."
-                        disabled={!podeEditar}
-                    />
-                </section>
-
-                <section className="formulario-section formulario-grid-2">
-                    <div>
-                        <div className="section-header section-header-small">
-                            <span className="section-number">07</span>
-                            <h2 className="section-title">Quanto?</h2>
-                        </div>
-                        <label className="formulario-label" htmlFor="quanto">
-                            Quanto? (Custo estimado R$) <span className="required">*</span>
-                        </label>
-                        <input 
-                            id="quanto" 
-                            type="text" 
-                            value={quanto} 
-                            onChange={handleQuantoChange} 
-                            required 
-                            className="formulario-input" 
-                            placeholder="R$ 0,00"
-                            disabled={!podeEditar}
-                        />
-                    </div>
-                    <div>
-                        <label className="formulario-label" htmlFor="impacto">
-                            Impacto <span className="required">*</span>
-                        </label>
-                        <select 
-                            id="impacto" 
-                            value={impacto} 
-                            onChange={(e) => setImpacto(e.target.value)} 
-                            className="formulario-input" 
-                            style={{ appearance: 'none' }}
-                            disabled={!podeEditar}
+                {(!podeEditar && statusAtual !== 'PENDENTE') && (
+                    <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: '10px', padding: '0.65rem 0.85rem', display: 'grid', gap: '0.5rem' }}>
+                        <button
+                            type="button"
+                            onClick={() => setMostrarDetalhesMatriz(!mostrarDetalhesMatriz)}
+                            style={{
+                                background: 'transparent',
+                                border: 'none',
+                                padding: 0,
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'space-between',
+                                width: '100%',
+                                cursor: 'pointer',
+                                textAlign: 'left',
+                                color: '#0f172a'
+                            }}
                         >
-                            <option value="BAIXO">Baixo</option>
-                            <option value="MEDIO">Médio</option>
-                            <option value="ALTO">Alto</option>
-                        </select>
+                            <div>
+                                <p style={{ margin: 0, fontSize: '0.68rem', letterSpacing: '0.06em', textTransform: 'uppercase', color: '#64748b', fontWeight: 700 }}>Informações da ação / projeto</p>
+                                <h2 style={{ margin: '0.15rem 0 0', fontSize: '1rem', color: '#0f172a' }}>Visualização da matriz</h2>
+                            </div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+                                <span style={{ fontSize: '1.1rem', color: '#475569', transform: mostrarDetalhesMatriz ? 'rotate(90deg)' : 'rotate(0deg)', display: 'inline-block', transition: 'transform 0.2s ease' }}>›</span>
+                            </div>
+                        </button>
+
+                        {mostrarDetalhesMatriz && (
+                            <div style={{ display: 'grid', gap: '0.65rem' }}>
+                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '0.65rem' }}>
+                                    <div style={{ background: '#f1f5f9', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '0.65rem 0.75rem' }}>
+                                        <p style={{ margin: '0 0 0.2rem', color: '#64748b', fontSize: '0.68rem', textTransform: 'uppercase', letterSpacing: '0.04em', fontWeight: 700 }}>Nome da ação</p>
+                                        <p style={{ margin: 0, color: '#0f172a', fontWeight: 600, fontSize: '0.9rem' }}>{nome || '-'}</p>
+                                    </div>
+                                    <div style={{ background: '#f1f5f9', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '0.65rem 0.75rem' }}>
+                                        <p style={{ margin: '0 0 0.2rem', color: '#64748b', fontSize: '0.68rem', textTransform: 'uppercase', letterSpacing: '0.04em', fontWeight: 700 }}>Onde</p>
+                                        <p style={{ margin: 0, color: '#0f172a', fontWeight: 600, fontSize: '0.9rem' }}>{onde || '-'}</p>
+                                    </div>
+                                    <div style={{ background: '#f1f5f9', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '0.65rem 0.75rem' }}>
+                                        <p style={{ margin: '0 0 0.2rem', color: '#64748b', fontSize: '0.68rem', textTransform: 'uppercase', letterSpacing: '0.04em', fontWeight: 700 }}>Quando</p>
+                                        <p style={{ margin: 0, color: '#0f172a', fontWeight: 600, fontSize: '0.9rem' }}>{quando || '-'}</p>
+                                    </div>
+                                    <div style={{ background: '#f1f5f9', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '0.65rem 0.75rem' }}>
+                                        <p style={{ margin: '0 0 0.2rem', color: '#64748b', fontSize: '0.68rem', textTransform: 'uppercase', letterSpacing: '0.04em', fontWeight: 700 }}>Quanto</p>
+                                        <p style={{ margin: 0, color: '#0f172a', fontWeight: 600, fontSize: '0.9rem' }}>{quanto || '-'}</p>
+                                    </div>
+                                    <div style={{ background: '#f1f5f9', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '0.65rem 0.75rem' }}>
+                                        <p style={{ margin: '0 0 0.2rem', color: '#64748b', fontSize: '0.68rem', textTransform: 'uppercase', letterSpacing: '0.04em', fontWeight: 700 }}>Impacto</p>
+                                        <p style={{ margin: 0, color: '#0f172a', fontWeight: 600, fontSize: '0.9rem' }}>{impacto || '-'}</p>
+                                    </div>
+                                </div>
+
+                                <div style={{ background: '#f1f5f9', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '0.7rem 0.8rem' }}>
+                                    <p style={{ margin: '0 0 0.25rem', color: '#64748b', fontSize: '0.68rem', textTransform: 'uppercase', letterSpacing: '0.04em', fontWeight: 700 }}>O quê?</p>
+                                    <p style={{ margin: 0, color: '#0f172a', whiteSpace: 'pre-line', fontSize: '0.88rem' }}>{oque || '-'}</p>
+                                </div>
+
+                                <div style={{ background: '#f1f5f9', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '0.7rem 0.8rem' }}>
+                                    <p style={{ margin: '0 0 0.25rem', color: '#64748b', fontSize: '0.68rem', textTransform: 'uppercase', letterSpacing: '0.04em', fontWeight: 700 }}>Por quê?</p>
+                                    <p style={{ margin: 0, color: '#0f172a', whiteSpace: 'pre-line', fontSize: '0.88rem' }}>{porque || '-'}</p>
+                                </div>
+
+                                <div style={{ background: '#f1f5f9', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '0.7rem 0.8rem' }}>
+                                    <p style={{ margin: '0 0 0.25rem', color: '#64748b', fontSize: '0.68rem', textTransform: 'uppercase', letterSpacing: '0.04em', fontWeight: 700 }}>Como?</p>
+                                    <p style={{ margin: 0, color: '#0f172a', whiteSpace: 'pre-line', fontSize: '0.88rem' }}>{como || '-'}</p>
+                                </div>
+
+                                {observacao && (
+                                    <div style={{ background: '#f1f5f9', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '0.7rem 0.8rem' }}>
+                                        <p style={{ margin: '0 0 0.25rem', color: '#64748b', fontSize: '0.68rem', textTransform: 'uppercase', letterSpacing: '0.04em', fontWeight: 700 }}>Observações</p>
+                                        <p style={{ margin: 0, color: '#0f172a', whiteSpace: 'pre-line', fontSize: '0.88rem' }}>{observacao}</p>
+                                    </div>
+                                )}
+                            </div>
+                        )}
                     </div>
-                </section>
+                )}
 
                 <section className="formulario-section">
-                    <div className="section-header">
-                        <div>
-                            <span className="section-number">08</span>
-                            <h2 className="section-title">Observações</h2>
-                        </div>
-                        <p className="section-description">Registre notas adicionais ou lembretes sobre a ação.</p>
-                    </div>
-                    <label className="formulario-label" htmlFor="observacao">
-                        Observações adicionais
-                    </label>
-                    <textarea 
-                        id="observacao" 
-                        rows="4" 
-                        value={observacao} 
-                        onChange={(e) => setObservacao(e.target.value)} 
-                        className="formulario-textarea" 
-                        placeholder="Notas extras se houver..."
-                        disabled={!podeEditar}
-                    />
-                </section>
-
-                <section className="formulario-section">
-                    <div className="section-header">
+                    <div className="section-header etapas-section-header">
                         <div>
                             <span className="section-number">09</span>
                             <h2 className="section-title">Etapas de execução</h2>
                         </div>
+                        <button
+                            type="button"
+                            className={`etapas-edit-button${modoEdicaoEtapas ? ' is-active' : ''}`}
+                            onClick={() => setModoEdicaoEtapas(!modoEdicaoEtapas)}
+                            aria-pressed={modoEdicaoEtapas}
+                            aria-label={modoEdicaoEtapas ? 'Desativar edição das etapas' : 'Editar etapas de execução'}
+                            title={modoEdicaoEtapas ? 'Concluir edição das etapas' : 'Editar etapas de execução'}
+                        >
+                            <i className="bi bi-pencil-square" aria-hidden="true" />
+                        </button>
                         <p className="section-description">
-                            {statusAtual === 'APROVADO'
+                            {modoEdicaoEtapas
+                                ? 'Adicione, edite ou remova as etapas desta ação.'
+                                : statusAtual === 'APROVADO'
                                 ? 'Marque as etapas conforme forem concluídas. O percentual de andamento desta ação é calculado automaticamente.'
                                 : 'Defina os passos necessários para concluir cada ação. Depois de aprovada pelo Comitê, essas etapas poderão ser marcadas como concluídas.'}
                         </p>
@@ -613,13 +503,212 @@ export function FormularioMatriz({
                                 acaoLabel={acao.acao?.diretriz || `Ação ${acao.acaoId}`}
                                 etapas={acao.etapas}
                                 onChange={(novasEtapas) => handleEtapasChange(acao.acaoId, novasEtapas)}
-                                editavelTitulos={statusAtual !== 'APROVADO'}
+                                editavelTitulos={modoEdicaoEtapas}
                                 editavelConclusao={statusAtual === 'APROVADO'}
                                 disabled={!podeEditar && statusAtual !== 'APROVADO'}
                             />
                         ))}
                     </div>
                 </section>
+
+                {(!podeEditar && statusAtual !== 'PENDENTE') ? null : (
+                    <>
+                        <section className="formulario-section">
+                            <div className="section-header">
+                                <div>
+                                    <span className="section-number">01</span>
+                                    <h2 className="section-title">Nome da ação</h2>
+                                </div>
+                                <p className="section-description">Título que identifica a matriz e o projeto.</p>
+                            </div>
+                            <div>
+                                <label className="formulario-label" htmlFor="nome">
+                                    Nome da Ação / Projeto <span className="required">*</span>
+                                </label>
+                                <input 
+                                    id="nome" 
+                                    type="text" 
+                                    value={nome} 
+                                    onChange={(e) => setNome(e.target.value)} 
+                                    required 
+                                    className="formulario-input" 
+                                    placeholder="Ex: Modernização de Servidores"
+                                    disabled={!podeEditar}
+                                />
+                            </div>
+                        </section>
+
+                        <section className="formulario-section">
+                            <div className="section-header">
+                                <div>
+                                    <span className="section-number">02</span>
+                                    <h2 className="section-title">O quê?</h2>
+                                </div>
+                                <p className="section-description">Descreva com clareza o que será feito.</p>
+                            </div>
+                            <label className="formulario-label" htmlFor="oque">
+                                O quê? (Descrição detalhada) <span className="required">*</span>
+                            </label>
+                            <textarea 
+                                id="oque" 
+                                rows="5" 
+                                value={oque} 
+                                onChange={(e) => setOque(e.target.value)} 
+                                required 
+                                className="formulario-textarea" 
+                                placeholder="O que será feito..."
+                                disabled={!podeEditar}
+                            />
+                        </section>
+
+                        <section className="formulario-section">
+                            <div className="section-header">
+                                <div>
+                                    <span className="section-number">03</span>
+                                    <h2 className="section-title">Por quê?</h2>
+                                </div>
+                                <p className="section-description">Explique a justificativa e objetivos da ação.</p>
+                            </div>
+                            <label className="formulario-label" htmlFor="porque">
+                                Por quê? (Justificativa) <span className="required">*</span>
+                            </label>
+                            <textarea 
+                                id="porque" 
+                                rows="5" 
+                                value={porque} 
+                                onChange={(e) => setPorque(e.target.value)} 
+                                required 
+                                className="formulario-textarea" 
+                                placeholder="Por que essa ação é necessária..."
+                                disabled={!podeEditar}
+                            />
+                        </section>
+
+                        <section className="formulario-section formulario-grid-2">
+                            <div>
+                                <div className="section-header section-header-small">
+                                    <span className="section-number">04</span>
+                                    <h2 className="section-title">Onde?</h2>
+                                </div>
+                                <label className="formulario-label" htmlFor="onde">
+                                    Onde? (Local de execução) <span className="required">*</span>
+                                </label>
+                                <input 
+                                    id="onde" 
+                                    type="text" 
+                                    value={onde} 
+                                    onChange={(e) => setOnde(e.target.value)} 
+                                    required 
+                                    className="formulario-input" 
+                                    placeholder="Ex: Sede do Cetran/PA"
+                                    disabled={!podeEditar}
+                                />
+                            </div>
+                            <div>
+                                <div className="section-header section-header-small">
+                                    <span className="section-number">05</span>
+                                    <h2 className="section-title">Quando?</h2>
+                                </div>
+                                <label className="formulario-label" htmlFor="quando">
+                                    Quando? (Prazo / Data limite) <span className="required">*</span>
+                                </label>
+                                <input 
+                                    id="quando" 
+                                    type="date" 
+                                    value={quando} 
+                                    onChange={(e) => setQuando(e.target.value)} 
+                                    required 
+                                    className="formulario-input"
+                                    disabled={!podeEditar}
+                                />
+                            </div>
+                        </section>
+
+                        <section className="formulario-section">
+                            <div className="section-header">
+                                <div>
+                                    <span className="section-number">06</span>
+                                    <h2 className="section-title">Como?</h2>
+                                </div>
+                                <p className="section-description">Detalhe a metodologia, passos e estratégia.</p>
+                            </div>
+                            <label className="formulario-label" htmlFor="como">
+                                Como? (Metodologia / Passos) <span className="required">*</span>
+                            </label>
+                            <textarea 
+                                id="como" 
+                                rows="5" 
+                                value={como} 
+                                onChange={(e) => setComo(e.target.value)} 
+                                required 
+                                className="formulario-textarea" 
+                                placeholder="Como será executado..."
+                                disabled={!podeEditar}
+                            />
+                        </section>
+
+                        <section className="formulario-section formulario-grid-2">
+                            <div>
+                                <div className="section-header section-header-small">
+                                    <span className="section-number">07</span>
+                                    <h2 className="section-title">Quanto?</h2>
+                                </div>
+                                <label className="formulario-label" htmlFor="quanto">
+                                    Quanto? (Custo estimado R$) <span className="required">*</span>
+                                </label>
+                                <input 
+                                    id="quanto" 
+                                    type="text" 
+                                    value={quanto} 
+                                    onChange={handleQuantoChange} 
+                                    required 
+                                    className="formulario-input" 
+                                    placeholder="R$ 0,00"
+                                    disabled={!podeEditar}
+                                />
+                            </div>
+                            <div className="impacto-field">
+                                <label className="formulario-label" htmlFor="impacto">
+                                    Impacto <span className="required">*</span>
+                                </label>
+                                <select 
+                                    id="impacto" 
+                                    value={impacto} 
+                                    onChange={(e) => setImpacto(e.target.value)} 
+                                    className="formulario-input" 
+                                    style={{ appearance: 'none' }}
+                                    disabled={!podeEditar}
+                                >
+                                    <option value="BAIXO">Baixo</option>
+                                    <option value="MEDIO">Médio</option>
+                                    <option value="ALTO">Alto</option>
+                                </select>
+                            </div>
+                        </section>
+
+                        <section className="formulario-section">
+                            <div className="section-header">
+                                <div>
+                                    <span className="section-number">08</span>
+                                    <h2 className="section-title">Observações</h2>
+                                </div>
+                                <p className="section-description">Registre notas adicionais ou lembretes sobre a ação.</p>
+                            </div>
+                            <label className="formulario-label" htmlFor="observacao">
+                                Observações adicionais
+                            </label>
+                            <textarea 
+                                id="observacao" 
+                                rows="4" 
+                                value={observacao} 
+                                onChange={(e) => setObservacao(e.target.value)} 
+                                className="formulario-textarea" 
+                                placeholder="Notas extras se houver..."
+                                disabled={!podeEditar}
+                            />
+                        </section>
+                    </>
+                )}
 
                 <div className="formulario-actions">
                     <button 

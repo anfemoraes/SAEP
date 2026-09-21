@@ -21,6 +21,16 @@ interface UsuarioLogado {
   setor?: string | null;
 }
 
+function gerarIdMatriz(): string {
+  const letras = Array.from({ length: 3 }, () => {
+    const codigo = 65 + Math.floor(Math.random() * 26);
+    return String.fromCharCode(codigo);
+  }).join('');
+  const numeros = Math.floor(Math.random() * 100).toString().padStart(2, '0');
+
+  return `${letras}${numeros}`;
+}
+
 @Injectable()
 export class MatrizesService {
   constructor(
@@ -119,6 +129,7 @@ export class MatrizesService {
 
     const matriz = await this.prisma.matriz.create({
       data: {
+        id: gerarIdMatriz(),
         ...dados,
         criadoPorId: userId,
         acoes:

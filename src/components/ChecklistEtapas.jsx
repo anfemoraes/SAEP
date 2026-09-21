@@ -1,6 +1,7 @@
 // src/components/ChecklistEtapas.jsx
 import React, { useState } from 'react';
 import { calcularPercentualEtapas } from '../services/progresso';
+import Swal from 'sweetalert2';
 
 function corDoProgresso(percentual) {
     if (percentual >= 70) return '#16a34a';
@@ -27,7 +28,20 @@ export function ChecklistEtapas({ acaoId, acaoLabel, etapas = [], onChange, edit
         setNovaEtapa('');
     };
 
-    const removerEtapa = (id) => {
+    const removerEtapa = async (id, titulo) => {
+        const resultado = await Swal.fire({
+            title: 'Excluir etapa?',
+            text: `Você deseja excluir a etapa "${titulo}"?`,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: 'Excluir',
+            cancelButtonText: 'Cancelar',
+            confirmButtonColor: '#dc2626',
+            cancelButtonColor: '#64748b',
+            reverseButtons: true
+        });
+
+        if (!resultado.isConfirmed) return;
         onChange(etapas.filter(e => e.id !== id));
     };
 
@@ -84,7 +98,7 @@ export function ChecklistEtapas({ acaoId, acaoLabel, etapas = [], onChange, edit
                             </span>
                         )}
                         {editavelTitulos && (
-                            <button type="button" onClick={() => removerEtapa(etapa.id)} aria-label={`Remover etapa ${etapa.titulo}`} style={{ border: 'none', background: 'transparent', color: '#dc2626', cursor: 'pointer', fontSize: '1.1rem', lineHeight: 1, padding: '0.2rem' }}>
+                            <button type="button" onClick={() => removerEtapa(etapa.id, etapa.titulo)} aria-label={`Remover etapa ${etapa.titulo}`} style={{ border: 'none', background: 'transparent', color: '#dc2626', cursor: 'pointer', fontSize: '1.1rem', lineHeight: 1, padding: '0.2rem' }}>
                                 ×
                             </button>
                         )}
