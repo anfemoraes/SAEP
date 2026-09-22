@@ -15,14 +15,16 @@ export function Header({ telas = {}, telaAtual, onNavigate, usuarioLogado, setUs
     const [mostrarSenha, setMostrarSenha] = useState(false);
     const dropdownRef = useRef(null);
 
-        const {
+    const {
         HOME = 'home',
         ACOES = 'acoes',
         CONSULTAR = 'consultar',
         RASCUNHOS = 'rascunhos',
         CETRAN2030 = 'cetran2030',
         COMITE = 'comite',
-        ADMIN = 'admin'
+        ADMIN = 'admin',
+        TROCAR_SENHA = 'trocar-senha',
+        RECUPERAR_SENHA = 'recuperar-senha'
     } = telas;
 
     // Fecha o dropdown ao clicar fora
@@ -106,27 +108,25 @@ export function Header({ telas = {}, telaAtual, onNavigate, usuarioLogado, setUs
         : '';
 
     return (
-        <header className="header-container" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem 2rem', background: '#ffffff', borderBottom: '1px solid #e2e8f0', position: 'relative' }}>
-            <div className="header-brand" onClick={() => handleNavigate(HOME)} style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '10px' }}>
+        <header className="header-container" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.85rem 2rem', background: '#ffffff', borderBottom: '1px solid #e2e8f0', minHeight: '70px' }}>
+            <div className="header-brand" onClick={() => handleNavigate(HOME)} style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '12px' }}>
                 <img
                     src={logoImg}
-                    alt="Logo SISCETRAN"
+                    alt="Logo SAEP"
                     style={{
-                        height: '350px',
+                        height: '42px',
                         width: 'auto',
                         objectFit: 'contain',
-                        position: 'absolute',
-                        left: '2rem',
-                        top: '50%',
-                        transform: 'translateY(-50%)'
-    }}
-/>
+                        display: 'block'
+                    }}
+                />
             </div>
 
             {/* Menu Desktop */}
             <nav className="header-nav" style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', flexWrap: 'wrap' }}>
                 {estaLogado && (
                     <>
+                        <button className="button" onClick={() => handleNavigate(HOME)} style={estiloBotaoNav(telaAtual === HOME)}>Início</button>
                         <button className="button" onClick={() => handleNavigate(ACOES)} style={estiloBotaoNav(telaAtual === ACOES)}>Ações Estratégicas</button>
                         <button className="button" onClick={() => handleNavigate(CONSULTAR)} style={estiloBotaoNav(telaAtual === CONSULTAR)}>Minhas Matrizes</button>
                         <button className="button" onClick={() => handleNavigate(RASCUNHOS)} style={estiloBotaoNav(telaAtual === RASCUNHOS)}>Meus Rascunhos</button>
@@ -273,10 +273,19 @@ export function Header({ telas = {}, telaAtual, onNavigate, usuarioLogado, setUs
                                     </button>
                                 )}
 
+                                {/* Opção Trocar Senha */}
+                                <button
+                                    type="button"
+                                    onClick={() => handleNavigate(TROCAR_SENHA)}
+                                    style={estiloItemDropdown(telaAtual === TROCAR_SENHA)}
+                                >
+                                    <i className="bi bi-key-fill" style={{ color: '#2563eb', fontSize: '1rem' }}></i>
+                                    <span>Trocar Senha</span>
+                                    {telaAtual === TROCAR_SENHA && <i className="bi bi-check2" style={{ marginLeft: 'auto', color: '#2563eb' }}></i>}
+                                </button>
+
                                 {/* Separador */}
-                                {(podeVerComite || podeVerAdmin) && (
-                                    <div style={{ height: '1px', background: '#f1f5f9', margin: '0.35rem 0' }} />
-                                )}
+                                <div style={{ height: '1px', background: '#f1f5f9', margin: '0.35rem 0' }} />
 
                                 {/* Botão Sair */}
                                 <button
@@ -311,9 +320,9 @@ export function Header({ telas = {}, telaAtual, onNavigate, usuarioLogado, setUs
                     <button
                         className="button"
                         onClick={() => setModalLoginAberto(true)}
-                        style={{ background: '#2563eb', color: '#fff', padding: '0.4rem 1rem', borderRadius: '6px', border: 'none', cursor: 'pointer', fontWeight: '500' }}
+                        style={{ background: '#2563eb', color: '#fff', padding: '0.5rem 1.25rem', borderRadius: '6px', border: 'none', cursor: 'pointer', fontWeight: '600' }}
                     >
-                        Login
+                        Entrar
                     </button>
                 )}
             </nav>
@@ -326,9 +335,13 @@ export function Header({ telas = {}, telaAtual, onNavigate, usuarioLogado, setUs
             {/* Modal de Login */}
             {modalLoginAberto && (
                 <div className="modal" style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', background: 'rgba(0,0,0,0.5)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000 }}>
-                    <div className="modal-content" style={{ background: '#fff', padding: '2rem', borderRadius: '8px', width: '100%', maxWidth: '400px', position: 'relative' }}>
-                        <span className="close" onClick={() => setModalLoginAberto(false)} style={{ position: 'absolute', top: '10px', right: '15px', cursor: 'pointer', fontSize: '1.5rem', color: '#64748b' }}>&times;</span>
-                        <h2 style={{ marginBottom: '1.2rem', color: '#1e293b', fontSize: '1.3rem' }}>Acesso ao SISCETRAN</h2>
+                    <div className="modal-content" style={{ background: '#fff', padding: '2rem', borderRadius: '12px', width: '100%', maxWidth: '400px', position: 'relative', boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)' }}>
+                        <span className="close" onClick={() => setModalLoginAberto(false)} style={{ position: 'absolute', top: '14px', right: '18px', cursor: 'pointer', fontSize: '1.5rem', color: '#64748b' }}>&times;</span>
+                        <div style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
+                            <img src={logoImg} alt="Logo SAEP" style={{ height: '40px', margin: '0 auto 0.75rem auto', display: 'block' }} />
+                            <h2 style={{ margin: 0, color: '#1e293b', fontSize: '1.25rem' }}>Acesso ao SAEP</h2>
+                            <p style={{ margin: '4px 0 0 0', color: '#64748b', fontSize: '0.85rem' }}>Sistema de Ações Estratégicas do PETRANS</p>
+                        </div>
                         <form onSubmit={handleLoginSubmit}>
                             <label style={{ display: 'block', marginBottom: '0.4rem', fontSize: '0.85rem', fontWeight: '600', color: '#475569' }}>E-mail:</label>
                             <input
@@ -337,18 +350,18 @@ export function Header({ telas = {}, telaAtual, onNavigate, usuarioLogado, setUs
                                 onChange={(e) => setEmail(e.target.value)}
                                 required
                                 placeholder="seu.email@exemplo.com"
-                                style={{ width: '100%', padding: '0.6rem', marginBottom: '1rem', border: '1px solid #cbd5e1', borderRadius: '6px', boxSizing: 'border-box', fontSize: '0.9rem' }}
+                                style={{ width: '100%', padding: '0.65rem 0.8rem', marginBottom: '1rem', border: '1px solid #cbd5e1', borderRadius: '8px', boxSizing: 'border-box', fontSize: '0.9rem' }}
                             />
 
                             <label style={{ display: 'block', marginBottom: '0.4rem', fontSize: '0.85rem', fontWeight: '600', color: '#475569' }}>Senha:</label>
-                            <div style={{ position: 'relative', display: 'flex', alignItems: 'center', marginBottom: '1.2rem' }}>
+                            <div style={{ position: 'relative', display: 'flex', alignItems: 'center', marginBottom: '0.6rem' }}>
                                 <input
                                     type={mostrarSenha ? "text" : "password"}
                                     value={senha}
                                     onChange={(e) => setSenha(e.target.value)}
                                     required
                                     placeholder="Sua senha"
-                                    style={{ width: '100%', padding: '0.6rem', paddingRight: '40px', border: '1px solid #cbd5e1', borderRadius: '6px', boxSizing: 'border-box', fontSize: '0.9rem' }}
+                                    style={{ width: '100%', padding: '0.65rem 0.8rem', paddingRight: '40px', border: '1px solid #cbd5e1', borderRadius: '8px', boxSizing: 'border-box', fontSize: '0.9rem' }}
                                 />
                                 <i
                                     className={`bi ${mostrarSenha ? 'bi-eye-slash' : 'bi-eye'}`}
@@ -357,7 +370,30 @@ export function Header({ telas = {}, telaAtual, onNavigate, usuarioLogado, setUs
                                 ></i>
                             </div>
 
-                            <button type="submit" className="button" style={{ width: '100%', background: '#2563eb', color: '#fff', padding: '0.7rem', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold', fontSize: '0.95rem' }}>Entrar</button>
+                            <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '1.2rem' }}>
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        setModalLoginAberto(false);
+                                        handleNavigate(RECUPERAR_SENHA);
+                                    }}
+                                    style={{
+                                        background: 'none',
+                                        border: 'none',
+                                        color: '#2563eb',
+                                        fontSize: '0.82rem',
+                                        cursor: 'pointer',
+                                        padding: 0,
+                                        fontWeight: 500
+                                    }}
+                                    onMouseEnter={(e) => (e.currentTarget.style.textDecoration = 'underline')}
+                                    onMouseLeave={(e) => (e.currentTarget.style.textDecoration = 'none')}
+                                >
+                                    Esqueceu sua senha?
+                                </button>
+                            </div>
+
+                            <button type="submit" className="button" style={{ width: '100%', background: '#2563eb', color: '#fff', padding: '0.75rem', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold', fontSize: '0.95rem' }}>Entrar</button>
                         </form>
                     </div>
                 </div>
@@ -372,12 +408,13 @@ const estiloBotaoNav = (ativo) => ({
     color: ativo ? '#fff' : '#475569',
     cursor: 'pointer',
     fontWeight: '500',
-    padding: '0.4rem 0.8rem',
-    borderRadius: '4px',
+    padding: '0.45rem 0.85rem',
+    borderRadius: '6px',
     transition: 'all 0.2s ease',
     boxShadow: ativo ? '0 2px 10px rgba(37, 99, 235, 0.18)' : 'none',
     textAlign: 'center',
-    width: 'auto'
+    width: 'auto',
+    fontSize: '0.9rem'
 });
 
 const estiloItemDropdown = (ativo) => ({

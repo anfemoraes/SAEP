@@ -10,6 +10,8 @@ import { PainelAdmin } from './pages/PainelAdmin';
 import { Footer } from './components/Footer';
 import { PainelAndamento } from './pages/PainelAndamento';
 import { PainelCetran2030 } from './pages/PainelCetran2030';
+import { TrocarSenha } from './pages/TrocarSenha';
+import { RecuperarSenha } from './pages/RecuperarSenha';
 
 const TELAS = {
     HOME: 'home',
@@ -19,7 +21,9 @@ const TELAS = {
     RASCUNHOS: 'rascunhos',
     CETRAN2030: 'cetran2030',
     COMITE: 'comite',
-    ADMIN: 'admin'
+    ADMIN: 'admin',
+    TROCAR_SENHA: 'trocar-senha',
+    RECUPERAR_SENHA: 'recuperar-senha'
 };
 
 export default function App() {
@@ -36,7 +40,7 @@ export default function App() {
         }
     }, []);
 
-    // Opção A: quando o usuário faz login (null -> usuário), cai direto no painel.
+    // Quando o usuário faz login (null -> usuário), vai direto para o painel home.
     useEffect(() => {
         if (usuarioLogado && estavaDeslogadoRef.current) {
             setTelaAtual(TELAS.HOME);
@@ -110,6 +114,10 @@ export default function App() {
                 return <PainelCetran2030 />;
             case TELAS.ADMIN:
                 return <PainelAdmin usuarioLogado={usuarioLogado} />;
+            case TELAS.TROCAR_SENHA:
+                return <TrocarSenha onVoltar={() => setTelaAtual(TELAS.HOME)} />;
+            case TELAS.RECUPERAR_SENHA:
+                return <RecuperarSenha onVoltar={() => setTelaAtual(TELAS.HOME)} />;
             default:
                 return <div style={{ padding: '2rem' }}><h2>Página não encontrada</h2></div>;
         }

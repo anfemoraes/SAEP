@@ -212,7 +212,7 @@ export function PainelAdmin({ usuarioLogado }) {
         <div style={{ padding: '2rem', maxWidth: '1200px', margin: '0 auto' }}>
             <div style={{ marginBottom: '2rem' }}>
                 <h2 style={{ color: '#1e293b', margin: 0 }}>Painel do Administrador</h2>
-                <p style={{ color: '#64748b', fontSize: '0.9rem', margin: '4px 0 0 0' }}>Gerenciamento global de acessos, usuários e ações base do SISCETRAN.</p>
+                <p style={{ color: '#64748b', fontSize: '0.9rem', margin: '4px 0 0 0' }}>Gerenciamento global de acessos, usuários e ações base do SAEP.</p>
             </div>
 
             {/* Seção de Usuários */}
