@@ -9,7 +9,6 @@ import { PainelComite } from './pages/PainelComite';
 import { PainelAdmin } from './pages/PainelAdmin';
 import { Footer } from './components/Footer';
 import { PainelAndamento } from './pages/PainelAndamento';
-import { PainelCetran2030 } from './pages/PainelCetran2030';
 import { TrocarSenha } from './pages/TrocarSenha';
 import { RecuperarSenha } from './pages/RecuperarSenha';
 
@@ -19,7 +18,6 @@ const TELAS = {
     FORMULARIO: 'formulario',
     CONSULTAR: 'consultar',
     RASCUNHOS: 'rascunhos',
-    CETRAN2030: 'cetran2030',
     COMITE: 'comite',
     ADMIN: 'admin',
     TROCAR_SENHA: 'trocar-senha',
@@ -110,8 +108,6 @@ export default function App() {
                 return <ConsultarMatrizes usuarioLogado={usuarioLogado} modo="rascunhos" onNavigate={(tela) => setTelaAtual(tela)} onEditar={(registro) => abrirFormularioEdicao(registro, TELAS.RASCUNHOS)} />;
             case TELAS.COMITE:
                 return <PainelComite usuarioLogado={usuarioLogado} />;
-            case TELAS.CETRAN2030:
-                return <PainelCetran2030 />;
             case TELAS.ADMIN:
                 return <PainelAdmin usuarioLogado={usuarioLogado} />;
             case TELAS.TROCAR_SENHA:

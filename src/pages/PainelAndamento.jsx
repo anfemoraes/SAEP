@@ -215,9 +215,9 @@ export function PainelAndamento({ usuarioLogado, onNavigate, telas = {} }) {
 
                     <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '1.25rem', boxShadow: '0 4px 12px rgba(15, 23, 42, 0.03)' }}>
                         <div style={{ width: '38px', height: '38px', borderRadius: '8px', background: '#f0fdf4', color: '#16a34a', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.2rem', marginBottom: '0.75rem' }}>
-                            <i className="bi bi-pie-chart-fill"></i>
+                            <i className="bi bi-graph-up-arrow"></i>
                         </div>
-                        <h4 style={{ margin: '0 0 0.35rem 0', color: '#1e293b', fontSize: '0.95rem' }}>CETRAN 2030</h4>
+                        <h4 style={{ margin: '0 0 0.35rem 0', color: '#1e293b', fontSize: '0.95rem' }}>Indicadores & Metas</h4>
                         <p style={{ margin: 0, color: '#64748b', fontSize: '0.85rem', lineHeight: 1.5 }}>Monitoramento de metas e progresso em tempo real.</p>
                     </div>
                 </div>
@@ -266,14 +266,6 @@ export function PainelAndamento({ usuarioLogado, onNavigate, telas = {} }) {
             corIcone: '#ca8a04',
             bgIcone: '#fefce8',
             tela: telas.RASCUNHOS
-        },
-        {
-            titulo: 'Painel CETRAN 2030',
-            descricao: 'Visualização analítica e estratégica do andamento agrupado por Objetivos Gerais (OG), Projetos e Setores.',
-            icone: 'bi bi-pie-chart-fill',
-            corIcone: '#16a34a',
-            bgIcone: '#f0fdf4',
-            tela: telas.CETRAN2030
         },
         ...(podeVerComite ? [{
             titulo: 'Painel do Comitê',
