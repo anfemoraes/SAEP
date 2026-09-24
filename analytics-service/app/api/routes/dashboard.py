@@ -4,6 +4,7 @@ from app.services.projetos import obter_distribuicao_projetos
 from app.services.setores import obter_distribuicao_setores
 from app.services.prazos import obter_distribuicao_prazos
 from app.services.execucao import obter_analise_execucao
+from app.services.evolucao import obter_evolucao_temporal
 
 router = APIRouter(prefix="/analytics", tags=["Analytics"])
 
@@ -34,6 +35,17 @@ async def get_prazos():
 async def get_execucao():
     try:
         return await obter_analise_execucao()
+    except Exception as e:
+        return {
+            "status": "erro",
+            "mensagem": str(e),
+            "tipo": type(e).__name__
+        }
+
+@router.get("/evolucao")
+async def get_evolucao():
+    try:
+        return await obter_evolucao_temporal()
     except Exception as e:
         return {
             "status": "erro",
