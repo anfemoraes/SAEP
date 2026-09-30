@@ -26,7 +26,8 @@ const TELAS = {
 
 export default function App() {
     const [usuarioLogado, setUsuarioLogado] = useState(usuarioEmCache());
-    const [telaAtual, setTelaAtual] = useState(TELAS.HOME);
+    const tokenInicial = new URLSearchParams(window.location.search).get('token') || '';
+    const [telaAtual, setTelaAtual] = useState(tokenInicial ? TELAS.RECUPERAR_SENHA : TELAS.HOME);
 
     // Ref para saber se o usuário estava deslogado no render anterior.
     // Assim só redirecionamos para o painel quando ocorrer uma transição null -> usuário.
@@ -113,7 +114,7 @@ export default function App() {
             case TELAS.TROCAR_SENHA:
                 return <TrocarSenha onVoltar={() => setTelaAtual(TELAS.HOME)} />;
             case TELAS.RECUPERAR_SENHA:
-                return <RecuperarSenha onVoltar={() => setTelaAtual(TELAS.HOME)} />;
+                return <RecuperarSenha tokenInicial={tokenInicial} onVoltar={() => setTelaAtual(TELAS.HOME)} />;
             default:
                 return <div style={{ padding: '2rem' }}><h2>Página não encontrada</h2></div>;
         }

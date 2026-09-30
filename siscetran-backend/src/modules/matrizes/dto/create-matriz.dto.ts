@@ -19,7 +19,10 @@ export class AcaoEtapaDto {
   @IsNotEmpty()
   acaoId: string;
 
-  @ApiProperty({ example: [{ titulo: 'Levantar requisitos', concluida: false }], required: false })
+  @ApiProperty({
+    example: [{ titulo: 'Levantar requisitos', concluida: false }],
+    required: false,
+  })
   @IsArray()
   @IsOptional()
   etapas?: unknown[];

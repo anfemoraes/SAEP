@@ -40,7 +40,12 @@ export class AuthService {
       return null;
     }
 
-    const { senha: _, resetToken: __, resetTokenExpiry: ___, ...result } = usuario;
+    const {
+      senha: _,
+      resetToken: __,
+      resetTokenExpiry: ___,
+      ...result
+    } = usuario;
     return result;
   }
 
@@ -51,7 +56,9 @@ export class AuthService {
     }
 
     if (!usuario.ativo) {
-      throw new UnauthorizedException('Usuário desativado. Entre em contato com o administrador.');
+      throw new UnauthorizedException(
+        'Usuário desativado. Entre em contato com o administrador.',
+      );
     }
 
     const senhaExpirada =
@@ -90,7 +97,9 @@ export class AuthService {
     const roleFinal = role || 'USUARIO';
 
     if ((roleFinal === 'USUARIO' || roleFinal === 'ADMIN_SETOR') && !setor) {
-      throw new BadRequestException('O campo "setor" é obrigatório para este perfil');
+      throw new BadRequestException(
+        'O campo "setor" é obrigatório para este perfil',
+      );
     }
 
     const senhaHash = await bcrypt.hash(senha, 10);
@@ -105,7 +114,12 @@ export class AuthService {
       },
     });
 
-    const { senha: _, resetToken: __, resetTokenExpiry: ___, ...result } = usuario;
+    const {
+      senha: _,
+      resetToken: __,
+      resetTokenExpiry: ___,
+      ...result
+    } = usuario;
     return result;
   }
 
@@ -126,7 +140,9 @@ export class AuthService {
   }
 
   async trocarSenha(userId: string, dto: TrocarSenhaDto) {
-    const usuario = await this.prisma.usuario.findUnique({ where: { id: userId } });
+    const usuario = await this.prisma.usuario.findUnique({
+      where: { id: userId },
+    });
 
     if (!usuario) {
       throw new NotFoundException('Usuário não encontrado');
@@ -163,7 +179,9 @@ export class AuthService {
 
     // Não revela se o e-mail existe ou não, por segurança.
     if (!usuario) {
-      return { message: 'Se o e-mail existir, um link de recuperação foi enviado.' };
+      return {
+        message: 'Se o e-mail existir, um link de recuperação foi enviado.',
+      };
     }
 
     const token = crypto.randomBytes(32).toString('hex');
@@ -178,7 +196,9 @@ export class AuthService {
     });
 
     // MOCK de envio de e-mail:
-    console.log(`[MOCK EMAIL] Link de recuperação para ${usuario.email}: /redefinir-senha?token=${token}`);
+    console.log(
+      `[MOCK EMAIL] Link de recuperação para ${usuario.email}: /redefinir-senha?token=${token}`,
+    );
 
     const resposta: { message: string; token?: string } = {
       message: 'Se o e-mail existir, um link de recuperação foi enviado.',
@@ -216,6 +236,8 @@ export class AuthService {
       },
     });
 
-    return { message: 'Senha redefinida com sucesso. Faça login com a nova senha.' };
+    return {
+      message: 'Senha redefinida com sucesso. Faça login com a nova senha.',
+    };
   }
 }
