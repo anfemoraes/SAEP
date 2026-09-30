@@ -11,9 +11,11 @@ import { Footer } from './components/Footer';
 import { PainelAndamento } from './pages/PainelAndamento';
 import { TrocarSenha } from './pages/TrocarSenha';
 import { RecuperarSenha } from './pages/RecuperarSenha';
+import { DashboardEstrategico } from './pages/DashboardEstrategico';
 
 const TELAS = {
     HOME: 'home',
+    DASHBOARD: 'dashboard',
     ACOES: 'acoes',
     FORMULARIO: 'formulario',
     CONSULTAR: 'consultar',
@@ -85,6 +87,8 @@ export default function App() {
                         telas={TELAS}
                     />
                 );
+            case TELAS.DASHBOARD:
+                return <DashboardEstrategico />;
             case TELAS.ACOES:
                 return (
                     <AcoesEstrategicas

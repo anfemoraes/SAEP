@@ -17,6 +17,7 @@ export function Header({ telas = {}, telaAtual, onNavigate, usuarioLogado, setUs
 
     const {
         HOME = 'home',
+        DASHBOARD = 'dashboard',
         ACOES = 'acoes',
         CONSULTAR = 'consultar',
         RASCUNHOS = 'rascunhos',
@@ -126,6 +127,7 @@ export function Header({ telas = {}, telaAtual, onNavigate, usuarioLogado, setUs
                 {estaLogado && (
                     <>
                         <button className="button" onClick={() => handleNavigate(HOME)} style={estiloBotaoNav(telaAtual === HOME)}>Início</button>
+                        <button className="button" onClick={() => handleNavigate(DASHBOARD)} style={estiloBotaoNav(telaAtual === DASHBOARD)}>Dashboard</button>
                         <button className="button" onClick={() => handleNavigate(ACOES)} style={estiloBotaoNav(telaAtual === ACOES)}>Ações Estratégicas</button>
                         <button className="button" onClick={() => handleNavigate(CONSULTAR)} style={estiloBotaoNav(telaAtual === CONSULTAR)}>Minhas Matrizes</button>
                         <button className="button" onClick={() => handleNavigate(RASCUNHOS)} style={estiloBotaoNav(telaAtual === RASCUNHOS)}>Meus Rascunhos</button>

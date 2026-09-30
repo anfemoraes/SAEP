@@ -244,11 +244,19 @@ export function PainelAndamento({ usuarioLogado, onNavigate, telas = {} }) {
     // Lista de serviços / módulos do SAEP
     const servicos = [
         {
+            titulo: 'Dashboard Estratégico',
+            descricao: 'Painel executivo com 5 visões em cascata: 4 Eixos, 21 Projetos (destacando 8 estratégicos), Objetivos, Horizontes de Prazo e Lente de Setores.',
+            icone: 'bi bi-bar-chart-line-fill',
+            corIcone: '#2563eb',
+            bgIcone: '#eff6ff',
+            tela: telas.DASHBOARD
+        },
+        {
             titulo: 'Ações Estratégicas',
             descricao: 'Catálogo oficial de ações do PETRANS. Consulte diretrizes, prazos, setores e inicie o preenchimento de matrizes 5W2H.',
             icone: 'bi bi-diagram-3-fill',
-            corIcone: '#2563eb',
-            bgIcone: '#eff6ff',
+            corIcone: '#0284c7',
+            bgIcone: '#f0f9ff',
             tela: telas.ACOES
         },
         {
