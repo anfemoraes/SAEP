@@ -34,8 +34,8 @@ EIXOS_INFO = {
     }
 }
 
-# Os 8 Projetos Estratégicos Estruturantes do PETRANS (destaque visual)
-PROJETOS_ESTRATEGICOS = {
+# Os 8 Projetos Estratégicos Estruturantes padrão do PETRANS (ponto de partida)
+PROJETOS_ESTRATEGICOS_PADRAO = {
     "PROJETO 01",  # PETRANS
     "PROJETO 04",  # Observatório Estadual de Segurança Viária
     "PROJETO 05",  # GTIP Trânsito
@@ -45,6 +45,67 @@ PROJETOS_ESTRATEGICOS = {
     "PROJETO 17",  # Compliance e Combate ao Crime e à Corrupção
     "PROJETO 21",  # Centro Integrado de Operações de Trânsito
 }
+
+async def obter_projetos_estrategicos_set(conn) -> set:
+    """
+    Recupera do banco de dados quais projetos estão com a estrela / status de Estratégico.
+    Se a tabela ainda não existir ou estiver vazia, cria e inicializa com os 8 padrões.
+    """
+    try:
+        await conn.execute("""
+            CREATE TABLE IF NOT EXISTS "ProjetoEstrategico" (
+                "codigo" VARCHAR(50) PRIMARY KEY,
+                "isEstrategico" BOOLEAN NOT NULL DEFAULT TRUE,
+                "updatedAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                "updatedBy" VARCHAR(150)
+            );
+        """)
+
+        linhas = await conn.fetch('SELECT "codigo", "isEstrategico" FROM "ProjetoEstrategico";')
+        if not linhas:
+            # Inicializa com os 8 padrões
+            for cod in PROJETOS_ESTRATEGICOS_PADRAO:
+                await conn.execute(
+                    'INSERT INTO "ProjetoEstrategico" ("codigo", "isEstrategico", "updatedBy") VALUES ($1, TRUE, $2) ON CONFLICT DO NOTHING;',
+                    cod, "sistema_inicializacao"
+                )
+            return set(PROJETOS_ESTRATEGICOS_PADRAO)
+
+        return {row["codigo"] for row in linhas if row["isEstrategico"]}
+    except Exception as e:
+        print(f"Aviso ao consultar ProjetoEstrategico: {e}")
+        return set(PROJETOS_ESTRATEGICOS_PADRAO)
+
+async def alternar_projeto_estrategico(codigo: str, is_estrategico: bool, usuario_email: str = None) -> dict:
+    """
+    Permite que Administradores (ADMIN e ADMIN_SETOR) marquem ou desmarquem a estrela / destaque de um projeto.
+    """
+    conn = await get_db_connection()
+    try:
+        await conn.execute("""
+            CREATE TABLE IF NOT EXISTS "ProjetoEstrategico" (
+                "codigo" VARCHAR(50) PRIMARY KEY,
+                "isEstrategico" BOOLEAN NOT NULL DEFAULT TRUE,
+                "updatedAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                "updatedBy" VARCHAR(150)
+            );
+        """)
+
+        await conn.execute("""
+            INSERT INTO "ProjetoEstrategico" ("codigo", "isEstrategico", "updatedAt", "updatedBy")
+            VALUES ($1, $2, NOW(), $3)
+            ON CONFLICT ("codigo")
+            DO UPDATE SET "isEstrategico" = $2, "updatedAt" = NOW(), "updatedBy" = $3;
+        """, codigo, is_estrategico, usuario_email or "admin")
+
+        return {
+            "codigo": codigo,
+            "isEstrategico": is_estrategico,
+            "sucesso": True
+        }
+    finally:
+        await conn.close()
+
 
 def extrair_numero_eixo(og: str, lae: str) -> int:
     """Identifica a qual dos 4 Eixos a ação pertence com base no OG ou LAE."""
@@ -93,6 +154,28 @@ def calcular_percentual_etapas(etapas_raw) -> int:
     concluidas = sum(1 for e in etapas if isinstance(e, dict) and e.get("concluida") is True)
     return round((concluidas / len(etapas)) * 100)
 
+def normalizar_etapas(etapas_raw):
+    """Retorna os passos da matriz em um formato seguro para a API."""
+    etapas = etapas_raw
+    if isinstance(etapas_raw, str):
+        try:
+            etapas = json.loads(etapas_raw)
+        except Exception:
+            return []
+
+    if not isinstance(etapas, list):
+        return []
+
+    return [
+        {
+            "id": etapa.get("id") or f"etapa-{indice}",
+            "titulo": etapa.get("titulo") or f"Etapa {indice + 1}",
+            "concluida": etapa.get("concluida") is True
+        }
+        for indice, etapa in enumerate(etapas)
+        if isinstance(etapa, dict)
+    ]
+
 async def carregar_dados_consolidados():
     """
     Carrega todas as ações do banco e cruza com as matrizes APROVADAS
@@ -125,10 +208,15 @@ async def carregar_dados_consolidados():
 
         # Mapeia o percentual calculado por ação (a mais recente sobrescreve se houver duplicação)
         percentual_por_acao = {}
+        etapas_por_acao = {}
         for row in etapas_matrizes:
             acao_id = row["acaoId"]
             etapas = row["etapas"]
             percentual_por_acao[acao_id] = calcular_percentual_etapas(etapas)
+            etapas_por_acao[acao_id] = normalizar_etapas(etapas)
+
+        # 3. Busca a configuração de projetos estratégicos (definida pelos Administradores)
+        estrategicos_set = await obter_projetos_estrategicos_set(conn)
 
         # Monta a lista enriquecida de todas as ações
         acoes_consolidadas = []
@@ -160,8 +248,9 @@ async def carregar_dados_consolidados():
                 "projetoCodigo": proj_cod,
                 "projetoNome": proj_nome,
                 "projetoTema": a["projetoTema"] or "",
-                "isEstrategico": proj_cod in PROJETOS_ESTRATEGICOS,
+                "isEstrategico": proj_cod in estrategicos_set,
                 "progresso": progresso,
+                "etapas": etapas_por_acao.get(acao_id, []),
                 "statusExecucao": "CONCLUIDA" if progresso == 100 else ("EM_ANDAMENTO" if progresso > 0 else "NAO_INICIADA")
             })
 

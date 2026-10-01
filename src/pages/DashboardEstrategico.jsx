@@ -3,22 +3,24 @@ import React, { useState, useEffect, useCallback } from 'react';
 import {
     buscarResumoAnalytics,
     buscarObjetivos,
-    buscarPrazos
+    buscarPrazos,
+    alternarProjetoEstrategico
 } from '../services/analytics';
+import { ehAdmin } from '../services/permissoes';
 import Swal from 'sweetalert2';
 
 const SETORES_OPCOES = [
-    { valor: '', rotulo: '🌐 Todos os Setores (Visão Geral)' },
-    { valor: 'Secretaria-Executiva', rotulo: '🏢 Secretaria-Executiva' },
-    { valor: 'CTC', rotulo: '👥 CTC - Câmara Temática de Coordenação' },
-    { valor: 'CTEDUC', rotulo: '🎓 CTEDUC - Câmara Temática de Educação' },
-    { valor: 'CTES', rotulo: '⚖️ CTES - Esforço Legal e Fiscalização' },
-    { valor: 'ICETRAN', rotulo: '📚 ICETRAN (Sub-setor)' },
-    { valor: 'CTSIST', rotulo: '💻 CTSIST (Sistemas e Tecnologia)' },
-    { valor: 'Presidência do Cetran', rotulo: '🏛️ Presidência do CETRAN' }
+    { valor: '', rotulo: 'Todos os Setores (Visão Geral)' },
+    { valor: 'Secretaria-Executiva', rotulo: 'Secretaria-Executiva' },
+    { valor: 'CTC', rotulo: 'CTC - Câmara Temática de Coordenação' },
+    { valor: 'CTEDUC', rotulo: 'CTEDUC - Câmara Temática de Educação' },
+    { valor: 'CTES', rotulo: 'CTES - Esforço Legal e Fiscalização' },
+    { valor: 'ICETRAN', rotulo: 'ICETRAN ' },
+    { valor: 'CTSIST', rotulo: 'CTSIST ' },
+    { valor: 'Presidência do Cetran', rotulo: 'Presidência do CETRAN' }
 ];
 
-export function DashboardEstrategico() {
+export function DashboardEstrategico({ usuarioLogado }) {
     const [abaAtiva, setAbaAtiva] = useState('eixos'); // 'eixos' | 'projetos' | 'objetivos' | 'prazos' | 'setores'
     const [setorFiltro, setSetorFiltro] = useState('');
     const [apenasEstrategicos, setApenasEstrategicos] = useState(false);
@@ -30,6 +32,8 @@ export function DashboardEstrategico() {
 
     const [carregando, setCarregando] = useState(true);
     const [erroConexao, setErroConexao] = useState(false);
+
+    const podeEditarEstrategico = ehAdmin(usuarioLogado);
 
     const carregarDados = useCallback(async () => {
         setCarregando(true);
@@ -55,6 +59,77 @@ export function DashboardEstrategico() {
     useEffect(() => {
         carregarDados();
     }, [carregarDados]);
+
+    const handleToggleEstrategico = async (projetoCodigo, statusAtual, nomeProjeto) => {
+        if (!podeEditarEstrategico) return;
+
+        const novoStatus = !statusAtual;
+        const acaoTexto = novoStatus
+            ? 'marcar como Projeto Estratégico ⭐'
+            : 'remover o destaque de Projeto Estratégico';
+
+        const result = await Swal.fire({
+            title: novoStatus ? 'Marcar Estratégico?' : 'Remover Estratégico?',
+            text: `Deseja ${acaoTexto} para "${projetoCodigo} - ${nomeProjeto}"?`,
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonColor: novoStatus ? '#ca8a04' : '#64748b',
+            cancelButtonColor: '#94a3b8',
+            confirmButtonText: novoStatus ? 'Sim, marcar ⭐' : 'Sim, remover',
+            cancelButtonText: 'Cancelar'
+        });
+
+        if (result.isConfirmed) {
+            try {
+                await alternarProjetoEstrategico(projetoCodigo, novoStatus, usuarioLogado?.email);
+
+                // Atualiza o estado local imediatamente
+                setDadosResumo((prev) => {
+                    if (!prev) return prev;
+                    const novosProjetos = (prev.visao2_projetos || []).map((p) => {
+                        if (p.codigo === projetoCodigo) {
+                            return { ...p, isEstrategico: novoStatus };
+                        }
+                        return p;
+                    });
+
+                    const totalEstrategicos = novosProjetos.filter((p) => p.isEstrategico).length;
+                    const mediaEstrategicos = totalEstrategicos > 0
+                        ? Math.round(
+                            novosProjetos
+                                .filter((p) => p.isEstrategico)
+                                .reduce((s, p) => s + p.progresso, 0) / totalEstrategicos
+                        )
+                        : 0;
+
+                    return {
+                        ...prev,
+                        kpis: {
+                            ...prev.kpis,
+                            totalEstrategicos,
+                            progressoMedioEstrategicos: mediaEstrategicos
+                        },
+                        visao2_projetos: novosProjetos
+                    };
+                });
+
+                Swal.fire({
+                    icon: 'success',
+                    title: novoStatus ? '⭐ Projeto Estratégico Definido!' : 'Destaque removido',
+                    text: `${projetoCodigo} foi atualizado com sucesso.`,
+                    timer: 1600,
+                    showConfirmButton: false
+                });
+            } catch (err) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Erro ao alterar',
+                    text: err.message || 'Não foi possível atualizar o status estratégico do projeto.',
+                    confirmButtonColor: '#2563eb'
+                });
+            }
+        }
+    };
 
     const kpis = dadosResumo?.kpis || {};
     const eixos = dadosResumo?.visao1_eixos || [];
@@ -151,7 +226,7 @@ export function DashboardEstrategico() {
                 </div>
 
                 <div style={estiloKpiCard('#7c3aed')}>
-                    <span style={estiloKpiLabel}>8 Projetos Estratégicos</span>
+                    <span style={estiloKpiLabel}>{kpis.totalEstrategicos ?? 8} Projetos Estratégicos</span>
                     <h2 style={{ fontSize: '2.2rem', color: '#7c3aed', margin: '4px 0 0 0', fontWeight: 800 }}>
                         {kpis.progressoMedioEstrategicos ?? 0}%
                     </h2>
@@ -206,7 +281,7 @@ export function DashboardEstrategico() {
             {carregando ? (
                 <div style={{ padding: '4rem 1rem', textAlign: 'center', color: '#64748b' }}>
                     <div className="spinner" style={{ width: '40px', height: '40px', border: '4px solid #e2e8f0', borderTopColor: '#2563eb', borderRadius: '50%', margin: '0 auto 1rem auto', animation: 'spin 1s linear infinite' }}></div>
-                    <p style={{ fontWeight: 600, fontSize: '1rem' }}>Consolidando cálculos em cascata no FastAPI...</p>
+                    <p style={{ fontWeight: 600, fontSize: '1rem' }}>Consolidando dados</p>
                 </div>
             ) : (
                 <>
@@ -264,14 +339,21 @@ export function DashboardEstrategico() {
                     )}
 
                     {/* ========================================================================= */}
-                    {/* VISÃO 2: TODOS OS 21 PROJETOS COM DESTAQUE NOS 8 ESTRATÉGICOS             */}
+                    {/* VISÃO 2: TODOS OS PROJETOS COM DESTAQUE NOS ESTRATÉGICOS                  */}
                     {/* ========================================================================= */}
                     {abaAtiva === 'projetos' && (
                         <div>
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem', marginBottom: '1.5rem' }}>
                                 <div>
-                                    <h3 style={{ margin: 0, color: '#1e293b', fontSize: '1.25rem' }}>Projetos do PETRANS (21 Projetos)</h3>
-                                    <p style={{ margin: '4px 0 0 0', color: '#64748b', fontSize: '0.9rem' }}>Os 8 Projetos Estratégicos estão destacados em visual prioritário.</p>
+                                    <h3 style={{ margin: 0, color: '#1e293b', fontSize: '1.25rem' }}>Projetos do PETRANS ({projetos.length} Projetos)</h3>
+                                    <p style={{ margin: '4px 0 0 0', color: '#64748b', fontSize: '0.9rem' }}>
+                                        {kpis.totalEstrategicos ?? 0} Projetos Estratégicos definidos pela Administração.
+                                        {podeEditarEstrategico && (
+                                            <span style={{ marginLeft: '6px', color: '#2563eb', fontWeight: 600 }}>
+                                                (Clique na estrela ⭐ para marcar ou desmarcar)
+                                            </span>
+                                        )}
+                                    </p>
                                 </div>
 
                                 <div style={{ display: 'flex', gap: '0.5rem' }}>
@@ -279,14 +361,14 @@ export function DashboardEstrategico() {
                                         onClick={() => setApenasEstrategicos(false)}
                                         style={{ padding: '0.5rem 1rem', borderRadius: '8px', border: !apenasEstrategicos ? '2px solid #2563eb' : '1px solid #cbd5e1', background: !apenasEstrategicos ? '#eff6ff' : '#fff', color: !apenasEstrategicos ? '#1e40af' : '#475569', fontWeight: 600, cursor: 'pointer', fontSize: '0.85rem' }}
                                     >
-                                        Todos os 21 Projetos
+                                        Todos ({projetos.length})
                                     </button>
                                     <button
                                         onClick={() => setApenasEstrategicos(true)}
                                         style={{ padding: '0.5rem 1rem', borderRadius: '8px', border: apenasEstrategicos ? '2px solid #ca8a04' : '1px solid #cbd5e1', background: apenasEstrategicos ? '#fefce8' : '#fff', color: apenasEstrategicos ? '#854d0e' : '#475569', fontWeight: 600, cursor: 'pointer', fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '6px' }}
                                     >
                                         <i className="bi bi-star-fill" style={{ color: '#ca8a04' }}></i>
-                                        Apenas os 8 Estratégicos
+                                        Apenas Estratégicos ({projetos.filter(p => p.isEstrategico).length})
                                     </button>
                                 </div>
                             </div>
@@ -306,12 +388,63 @@ export function DashboardEstrategico() {
                                     >
                                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '10px', marginBottom: '0.75rem' }}>
                                             <div>
-                                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px', flexWrap: 'wrap' }}>
                                                     <span style={{ fontSize: '0.78rem', fontWeight: 800, color: '#2563eb' }}>{proj.codigo}</span>
-                                                    {proj.isEstrategico && (
-                                                        <span style={{ background: '#fef08a', color: '#854d0e', padding: '2px 8px', borderRadius: '999px', fontSize: '0.7rem', fontWeight: 800, display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-                                                            ⭐ PROJETO ESTRATÉGICO
-                                                        </span>
+                                                    
+                                                    {/* Badge / Botão Interativo de Estratégico (⭐) */}
+                                                    {podeEditarEstrategico ? (
+                                                        proj.isEstrategico ? (
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => handleToggleEstrategico(proj.codigo, true, proj.nome)}
+                                                                title="Clique para remover a estrela / status de estratégico"
+                                                                style={{
+                                                                    background: '#fef08a',
+                                                                    color: '#854d0e',
+                                                                    border: '1px solid #facc15',
+                                                                    padding: '2px 8px',
+                                                                    borderRadius: '999px',
+                                                                    fontSize: '0.7rem',
+                                                                    fontWeight: 800,
+                                                                    display: 'inline-flex',
+                                                                    alignItems: 'center',
+                                                                    gap: '4px',
+                                                                    cursor: 'pointer',
+                                                                    transition: 'all 0.15s ease'
+                                                                }}
+                                                            >
+                                                                ⭐ ESTRATÉGICO
+                                                                <i className="bi bi-x" style={{ fontSize: '0.9rem', fontWeight: 'bold' }}></i>
+                                                            </button>
+                                                        ) : (
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => handleToggleEstrategico(proj.codigo, false, proj.nome)}
+                                                                title="Clique para marcar como Projeto Estratégico (definir estrela ⭐)"
+                                                                style={{
+                                                                    background: '#f8fafc',
+                                                                    color: '#64748b',
+                                                                    border: '1px dashed #cbd5e1',
+                                                                    padding: '2px 8px',
+                                                                    borderRadius: '999px',
+                                                                    fontSize: '0.7rem',
+                                                                    fontWeight: 600,
+                                                                    display: 'inline-flex',
+                                                                    alignItems: 'center',
+                                                                    gap: '4px',
+                                                                    cursor: 'pointer',
+                                                                    transition: 'all 0.15s ease'
+                                                                }}
+                                                            >
+                                                                <i className="bi bi-star"></i> Marcar Estratégico
+                                                            </button>
+                                                        )
+                                                    ) : (
+                                                        proj.isEstrategico && (
+                                                            <span style={{ background: '#fef08a', color: '#854d0e', padding: '2px 8px', borderRadius: '999px', fontSize: '0.7rem', fontWeight: 800, display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                                                                ⭐ PROJETO ESTRATÉGICO
+                                                            </span>
+                                                        )
                                                     )}
                                                 </div>
                                                 <h4 style={{ margin: 0, fontSize: '1.05rem', color: '#0f172a', fontWeight: 700 }}>
@@ -459,6 +592,7 @@ export function DashboardEstrategico() {
                                                     <th style={{ padding: '10px' }}>Diretriz</th>
                                                     <th style={{ padding: '10px' }}>Projeto</th>
                                                     <th style={{ padding: '10px' }}>Setor</th>
+                                                    <th style={{ padding: '10px' }}>Etapas da matriz</th>
                                                     <th style={{ padding: '10px', textAlign: 'center' }}>Progresso</th>
                                                 </tr>
                                             </thead>
@@ -469,6 +603,25 @@ export function DashboardEstrategico() {
                                                         <td style={{ padding: '10px', color: '#1e293b' }}>{a.diretriz}</td>
                                                         <td style={{ padding: '10px', color: '#64748b' }}>{a.projeto}</td>
                                                         <td style={{ padding: '10px', color: '#475569' }}>{a.setor}</td>
+                                                        <td style={{ padding: '10px', minWidth: '190px', color: '#475569' }}>
+                                                            {a.etapas?.length ? (
+                                                                <details>
+                                                                    <summary style={{ cursor: 'pointer', color: '#2563eb', fontWeight: 600 }}>
+                                                                        {a.etapas.length} {a.etapas.length === 1 ? 'etapa' : 'etapas'}
+                                                                    </summary>
+                                                                    <ul style={{ margin: '8px 0 0 0', paddingLeft: '18px' }}>
+                                                                        {a.etapas.map(etapa => (
+                                                                            <li key={etapa.id} style={{ marginBottom: '4px', color: etapa.concluida ? '#166534' : '#475569' }}>
+                                                                                <i className={`bi ${etapa.concluida ? 'bi-check-circle-fill' : 'bi-circle'}`} aria-hidden="true" style={{ marginRight: '6px' }}></i>
+                                                                                {etapa.titulo}
+                                                                            </li>
+                                                                        ))}
+                                                                    </ul>
+                                                                </details>
+                                                            ) : (
+                                                                <span style={{ color: '#94a3b8' }}>Nenhuma etapa definida</span>
+                                                            )}
+                                                        </td>
                                                         <td style={{ padding: '10px', textAlign: 'center' }}>
                                                             <span style={{ padding: '3px 8px', borderRadius: '999px', fontSize: '0.8rem', fontWeight: 800, background: a.progresso === 100 ? '#dcfce7' : (a.progresso > 0 ? '#fef9c3' : '#f1f5f9'), color: a.progresso === 100 ? '#166534' : (a.progresso > 0 ? '#854d0e' : '#475569') }}>
                                                                 {a.progresso}%

@@ -75,7 +75,8 @@ async def obter_distribuicao_prazos(horizonte_filtro: str = None, setor_filtro: 
                 "projeto": f"{a['projetoCodigo']}: {a['projetoNome']}",
                 "setor": a["setorPrincipal"],
                 "progresso": a["progresso"],
-                "status": a["statusExecucao"]
+                "status": a["statusExecucao"],
+                "etapas": a["etapas"]
             }
             for a in acoes if a["prazoNormalizado"] == h_upper
         ]

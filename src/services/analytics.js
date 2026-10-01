@@ -3,11 +3,13 @@
 
 const BASE_URL = import.meta.env.VITE_ANALYTICS_API_URL || 'http://localhost:8000';
 
-async function fetchAnalytics(endpoint) {
+async function fetchAnalytics(endpoint, options = {}) {
     const res = await fetch(`${BASE_URL}${endpoint}`, {
         headers: {
-            'Content-Type': 'application/json'
-        }
+            'Content-Type': 'application/json',
+            ...(options.headers || {})
+        },
+        ...options
     });
 
     if (!res.ok) {
@@ -16,6 +18,20 @@ async function fetchAnalytics(endpoint) {
     }
 
     return res.json();
+}
+
+/**
+ * Permite a administradores (ADMIN e ADMIN_SETOR) marcar/desmarcar a estrela de projeto estratégico.
+ */
+export function alternarProjetoEstrategico(codigo, isEstrategico, usuarioEmail = '') {
+    return fetchAnalytics('/analytics/projetos/toggle-estrategico', {
+        method: 'POST',
+        body: JSON.stringify({
+            codigo,
+            isEstrategico,
+            usuarioEmail
+        })
+    });
 }
 
 /**

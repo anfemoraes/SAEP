@@ -88,7 +88,7 @@ export default function App() {
                     />
                 );
             case TELAS.DASHBOARD:
-                return <DashboardEstrategico />;
+                return <DashboardEstrategico usuarioLogado={usuarioLogado} />;
             case TELAS.ACOES:
                 return (
                     <AcoesEstrategicas

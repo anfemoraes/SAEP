@@ -1,5 +1,5 @@
-# app/api/routes/dashboard.py
-from fastapi import APIRouter, Query
+from fastapi import APIRouter, Query, HTTPException
+from pydantic import BaseModel
 from typing import Optional
 from app.services.resumo import obter_resumo_geral
 from app.services.eixos import obter_avanco_eixos
@@ -7,8 +7,25 @@ from app.services.projetos import obter_distribuicao_projetos
 from app.services.objetivos import obter_distribuicao_objetivos
 from app.services.prazos import obter_distribuicao_prazos
 from app.services.setores import obter_distribuicao_setores
+from app.services.cascata import alternar_projeto_estrategico
+
+class ToggleEstrategicoRequest(BaseModel):
+    codigo: str
+    isEstrategico: bool
+    usuarioEmail: Optional[str] = None
 
 router = APIRouter(prefix="/analytics", tags=["Analytics PETRANS"])
+
+@router.post("/projetos/toggle-estrategico")
+async def post_toggle_estrategico(body: ToggleEstrategicoRequest):
+    """Permite que ADMIN e ADMIN_SETOR definam se um projeto é Estratégico (estrela) ou não."""
+    if not body.codigo:
+        raise HTTPException(status_code=400, detail="Código do projeto é obrigatório.")
+    return await alternar_projeto_estrategico(
+        codigo=body.codigo,
+        is_estrategico=body.isEstrategico,
+        usuario_email=body.usuarioEmail
+    )
 
 @router.get("/resumo")
 async def get_resumo(setor: Optional[str] = Query(None, description="Filtro opcional por setor (Lente de Setor)")):
