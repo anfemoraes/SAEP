@@ -365,6 +365,33 @@ export function FormularioMatriz({
                     </details>
                 )}
 
+                {/* Seção 01: Nome da Matriz vem PRIMEIRO */}
+                <section className="formulario-section">
+                    <div className="section-header">
+                        <div>
+                            <span className="section-number">01</span>
+                            <h2 className="section-title">Nome da matriz</h2>
+                        </div>
+                        <p className="section-description">Título que identifica a matriz e o projeto.</p>
+                    </div>
+                    <div>
+                        <label className="formulario-label" htmlFor="nome">
+                            Nome da Matriz / Ação <span className="required">*</span>
+                        </label>
+                        <input 
+                            id="nome" 
+                            type="text" 
+                            value={nome} 
+                            onChange={(e) => setNome(e.target.value)} 
+                            required 
+                            className="formulario-input" 
+                            placeholder="Ex: Modernização de Servidores"
+                            disabled={!podeEditar}
+                        />
+                    </div>
+                </section>
+
+                {/* Seção 02: Etapas e Tarefas vem DEPOIS */}
                 <section className="formulario-section">
                     <div className="section-header etapas-section-header">
                         <div>
@@ -379,12 +406,11 @@ export function FormularioMatriz({
                                 : 'Aguardando a avaliação do Comitê Gestor. Depois de aprovada, as tarefas poderão ser marcadas como concluídas.'}
                         </p>
                     </div>
-                    <div style={{ display: 'grid', gap: '1rem' }}>
+                    <div style={{ display: 'grid', gap: '1.25rem' }}>
                         {acoesComEtapas.map(acao => (
                             <ChecklistEtapas
                                 key={acao.acaoId}
                                 acaoId={acao.acaoId}
-                                acaoLabel={acao.acao?.diretriz || `Ação ${acao.acaoId}`}
                                 etapas={acao.etapas}
                                 onChange={(novasEtapas) => handleEtapasChange(acao.acaoId, novasEtapas)}
                                 editavelTitulos={podeEditar}
@@ -394,36 +420,6 @@ export function FormularioMatriz({
                         ))}
                     </div>
                 </section>
-
-                {(!podeEditar && statusAtual !== 'PENDENTE') ? null : (
-                    <>
-                        <section className="formulario-section">
-                            <div className="section-header">
-                                <div>
-                                    <span className="section-number">01</span>
-                                    <h2 className="section-title">Nome da matriz</h2>
-                                </div>
-                                <p className="section-description">Título que identifica a matriz e o projeto.</p>
-                            </div>
-                            <div>
-                                <label className="formulario-label" htmlFor="nome">
-                                    Nome da Matriz / Ação <span className="required">*</span>
-                                </label>
-                                <input 
-                                    id="nome" 
-                                    type="text" 
-                                    value={nome} 
-                                    onChange={(e) => setNome(e.target.value)} 
-                                    required 
-                                    className="formulario-input" 
-                                    placeholder="Ex: Modernização de Servidores"
-                                    disabled={!podeEditar}
-                                />
-                            </div>
-                        </section>
-
-                    </>
-                )}
 
                 <div className="formulario-actions">
                     <button 
