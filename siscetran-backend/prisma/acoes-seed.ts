@@ -304,11 +304,11 @@ export const acoesFrontend: AcaoFrontend[] = [
   },
   {
     id: "AE 1.2.2.1",
-    diretriz: "Incentivar a adesão dos municípios a programas da Escola de Trânsito do Cetran e da Escola Pública de Trânsito, com e-learning e parcerias estratégicas.",
+    diretriz: "Incentivar a adesão dos municípios a programas da Escola do Cetran e da Escola Pública de Trânsito, com e-learning e parcerias estratégicas.",
     prazo: "Médio",
     meta: "% de municípios que aderem aos programas de capacitação.",
     indicador: "% de municípios que aderem aos programas de capacitação.",
-    responsavel: "CTEDUC, Escola de Trânsito do Cetran",
+    responsavel: "CTEDUC, Escola do Cetran",
   },
   {
     id: "AE 1.2.3.1",
@@ -796,7 +796,7 @@ export const acoesFrontend: AcaoFrontend[] = [
     prazo: "Médio",
     meta: "Portfólio de cursos da Escola de Trânsito estruturado e oferecido.",
     indicador: "Portfólio de cursos estruturado.",
-    responsavel: "CTEDUC, Escola de Trânsito do Cetran",
+    responsavel: "CTEDUC, Escola do Cetran",
   },
   {
     id: "AE 3.3.1.2",
@@ -804,7 +804,7 @@ export const acoesFrontend: AcaoFrontend[] = [
     prazo: "Longo",
     meta: "Parceria com IES para Pós-graduação em Trânsito estabelecida.",
     indicador: "Parceria com IES estabelecida.",
-    responsavel: "CTEDUC, Escola de Trânsito do Cetran",
+    responsavel: "CTEDUC, Escola do Cetran",
   },
   {
     id: "AE 3.3.1.3",
@@ -1076,7 +1076,7 @@ export const acoesFrontend: AcaoFrontend[] = [
     prazo: "Médio",
     meta: "Curso de capacitação de professores estruturado e oferecido.",
     indicador: "Curso de capacitação de professores estruturado.",
-    responsavel: "CTEDUC, Escola de Trânsito do Cetran",
+    responsavel: "CTEDUC, Escola do Cetran",
   },
   {
     id: "AE 4.1.1.5",

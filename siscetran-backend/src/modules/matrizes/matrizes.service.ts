@@ -31,6 +31,28 @@ function gerarIdMatriz(): string {
   return `${letras}${numeros}`;
 }
 
+/**
+ * Garante o formato Etapa -> Tarefas (5W2H por tarefa) antes de gravar o JSON.
+ * Etapas legadas (sem "tarefas") continuam aceitas.
+ */
+function validarEtapas(etapas: unknown[] | undefined): unknown[] {
+  const lista = etapas ?? [];
+  for (const etapa of lista) {
+    if (!etapa || typeof etapa !== 'object' || Array.isArray(etapa)) {
+      throw new BadRequestException('Etapa inválida');
+    }
+    const { tarefas } = etapa as { tarefas?: unknown };
+    if (tarefas === undefined) continue;
+    if (
+      !Array.isArray(tarefas) ||
+      tarefas.some((t) => !t || typeof t !== 'object' || Array.isArray(t))
+    ) {
+      throw new BadRequestException('As tarefas da etapa são inválidas');
+    }
+  }
+  return lista;
+}
+
 @Injectable()
 export class MatrizesService {
   constructor(
@@ -156,7 +178,7 @@ export class MatrizesService {
             ? {
                 create: acoes.map((a) => ({
                   acaoId: a.acaoId,
-                  etapas: (a.etapas ?? []) as Prisma.InputJsonValue,
+                  etapas: validarEtapas(a.etapas) as Prisma.InputJsonValue,
                 })),
               }
             : undefined,
@@ -228,7 +250,7 @@ export class MatrizesService {
       acoesUpdate = {
         create: acoes.map((a) => ({
           acaoId: a.acaoId,
-          etapas: (a.etapas ?? []) as Prisma.InputJsonValue,
+          etapas: validarEtapas(a.etapas) as Prisma.InputJsonValue,
         })),
       };
     }
@@ -341,7 +363,7 @@ export class MatrizesService {
     await this.logsService.create({
       usuarioId: userId,
       acao: 'ENVIAR_MATRIZ',
-      detalhes: `Enviou a matriz ${matrizAtualizada.id} - ${matrizAtualizada.nome} para o comitê (revisão ${numeroRevisaoFinal})`,
+      detalhes: `Enviou a matriz ${matrizAtualizada.id} - ${matrizAtualizada.nome} ao Comitê Gestor (revisão ${numeroRevisaoFinal})`,
     });
 
     return matrizAtualizada;
@@ -468,12 +490,12 @@ export class MatrizesService {
             },
           },
           update: {
-            etapas: (item.etapas ?? []) as Prisma.InputJsonValue,
+            etapas: validarEtapas(item.etapas) as Prisma.InputJsonValue,
           },
           create: {
             matrizId: id,
             acaoId: item.acaoId,
-            etapas: (item.etapas ?? []) as Prisma.InputJsonValue,
+            etapas: validarEtapas(item.etapas) as Prisma.InputJsonValue,
           },
         });
       }

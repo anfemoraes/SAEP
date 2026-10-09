@@ -30,7 +30,7 @@ async function bootstrap() {
 
   // Swagger
   const config = new DocumentBuilder()
-    .setTitle('SISCETRAN API')
+    .setTitle('Radar 2030 API')
     .setDescription('API do Sistema de Ações Estratégicas do PETRANS')
     .setVersion('1.0')
     .addBearerAuth()
@@ -48,7 +48,7 @@ async function bootstrap() {
   const port = process.env.PORT || 3000;
   await app.listen(port);
 
-  console.log(`🚀 SISCETRAN API rodando em: http://localhost:${port}`);
+  console.log(`🚀 Radar 2030 API rodando em: http://localhost:${port}`);
   console.log(`📚 Documentação Swagger: http://localhost:${port}/api/docs`);
 }
 bootstrap();
