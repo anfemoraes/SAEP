@@ -1,4 +1,5 @@
 # app/services/eixos.py
+from app.services.cascata import acao_pertence_ao_setor
 from app.services.cascata import carregar_dados_consolidados, EIXOS_INFO
 
 async def obter_avanco_eixos(setor_filtro: str = None):
@@ -11,8 +12,7 @@ async def obter_avanco_eixos(setor_filtro: str = None):
 
     # Aplica filtro de setor se solicitado
     if setor_filtro:
-        setor_upper = setor_filtro.upper()
-        acoes = [a for a in acoes if any(setor_upper in s.upper() for s in a["setores"])]
+        acoes = [a for a in acoes if acao_pertence_ao_setor(a, setor_filtro)]
 
     # Agrupa ações por número de Eixo (1 a 4)
     por_eixo = {1: [], 2: [], 3: [], 4: []}

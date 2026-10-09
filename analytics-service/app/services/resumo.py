@@ -1,4 +1,5 @@
 # app/services/resumo.py
+from app.services.cascata import acao_pertence_ao_setor
 from app.services.cascata import carregar_dados_consolidados
 from app.services.eixos import obter_avanco_eixos
 from app.services.projetos import obter_distribuicao_projetos
@@ -16,8 +17,7 @@ async def obter_resumo_geral(setor_filtro: str = None):
 
     acoes = await carregar_dados_consolidados()
     if setor_filtro:
-        setor_upper = setor_filtro.upper()
-        acoes = [a for a in acoes if any(setor_upper in s.upper() for s in a["setores"])]
+        acoes = [a for a in acoes if acao_pertence_ao_setor(a, setor_filtro)]
 
     total_acoes = len(acoes)
     concluidas = sum(1 for a in acoes if a["progresso"] == 100)

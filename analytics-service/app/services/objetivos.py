@@ -1,4 +1,5 @@
 # app/services/objetivos.py
+from app.services.cascata import acao_pertence_ao_setor
 from app.services.cascata import carregar_dados_consolidados, EIXOS_INFO
 
 async def obter_distribuicao_objetivos(setor_filtro: str = None):
@@ -10,8 +11,7 @@ async def obter_distribuicao_objetivos(setor_filtro: str = None):
     acoes = await carregar_dados_consolidados()
 
     if setor_filtro:
-        setor_upper = setor_filtro.upper()
-        acoes = [a for a in acoes if any(setor_upper in s.upper() for s in a["setores"])]
+        acoes = [a for a in acoes if acao_pertence_ao_setor(a, setor_filtro)]
 
     por_og = {}
     por_lae = {}

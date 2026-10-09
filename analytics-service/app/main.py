@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.api.routes import dashboard
 
 app = FastAPI(
-    title="SAEP Analytics API",
+    title="Radar 2030 Analytics API",
     description="Motor de Inteligência e Estatística do PETRANS / CETRAN-PA",
     version="1.0.0"
 )
@@ -20,4 +20,4 @@ app.include_router(dashboard.router)
 
 @app.get("/health")
 def health_check():
-    return {"status": "ok", "service": "SAEP Analytics API"}
+    return {"status": "ok", "service": "Radar 2030 Analytics API"}

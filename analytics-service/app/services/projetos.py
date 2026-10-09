@@ -1,4 +1,5 @@
 # app/services/projetos.py
+from app.services.cascata import acao_pertence_ao_setor
 from app.services.cascata import carregar_dados_consolidados, EIXOS_INFO
 
 async def obter_distribuicao_projetos(setor_filtro: str = None, apenas_estrategicos: bool = False):
@@ -10,8 +11,7 @@ async def obter_distribuicao_projetos(setor_filtro: str = None, apenas_estrategi
 
     # Filtro de setor
     if setor_filtro:
-        setor_upper = setor_filtro.upper()
-        acoes = [a for a in acoes if any(setor_upper in s.upper() for s in a["setores"])]
+        acoes = [a for a in acoes if acao_pertence_ao_setor(a, setor_filtro)]
 
     # Agrupamento por projetoCodigo
     projetos_map = {}

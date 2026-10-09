@@ -11,6 +11,7 @@ import {
 import { importarAcoes } from '../services/acoes';
 import { acoesEstrategicas } from '../services/acoes_data';
 import { ApiError } from '../services/api';
+import { labelRole } from '../services/permissoes';
 import Swal from 'sweetalert2';
 
 const ROLES = ['USUARIO', 'ADMIN_SETOR', 'COMITE', 'ADMIN_GERAL'];
@@ -258,7 +259,7 @@ export function PainelAdmin({ usuarioLogado }) {
         <div style={{ padding: '2rem', maxWidth: '1200px', margin: '0 auto' }}>
             <div style={{ marginBottom: '2rem' }}>
                 <h2 style={{ color: '#1e293b', margin: 0 }}>Painel do Administrador</h2>
-                <p style={{ color: '#64748b', fontSize: '0.9rem', margin: '4px 0 0 0' }}>Gerenciamento global de acessos, usuários e ações base do SAEP.</p>
+                <p style={{ color: '#64748b', fontSize: '0.9rem', margin: '4px 0 0 0' }}>Gerenciamento global de acessos, usuários e ações base do Radar 2030.</p>
             </div>
 
             {/* Seção de Usuários */}
@@ -299,7 +300,7 @@ export function PainelAdmin({ usuarioLogado }) {
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem' }}>
                             <label style={estiloLabel}>Perfil (Role) *</label>
                             <select value={form.role} onChange={e => setForm(f => ({ ...f, role: e.target.value }))} style={estiloInput}>
-                                {ROLES.map(r => <option key={r} value={r}>{r}</option>)}
+                                {ROLES.map(r => <option key={r} value={r}>{labelRole(r)}</option>)}
                             </select>
                         </div>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem' }}>
@@ -353,14 +354,14 @@ export function PainelAdmin({ usuarioLogado }) {
                                         <td style={{ padding: '12px', fontWeight: 'bold', color: '#1e293b' }}>{u.email}</td>
                                         <td style={{ padding: '12px' }}>
                                             {u.id === usuarioLogado?.id ? (
-                                                <span style={estiloBadgeRole(u.role)}>{u.role}</span>
+                                                <span style={estiloBadgeRole(u.role)}>{labelRole(u.role)}</span>
                                             ) : (
                                                 <select
                                                     value={u.role}
                                                     onChange={e => handleAlterarRole(u, e.target.value)}
                                                     style={{ padding: '4px 6px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.82rem', fontWeight: 'bold', ...corRole(u.role) }}
                                                 >
-                                                    {ROLES.map(r => <option key={r} value={r}>{r}</option>)}
+                                                    {ROLES.map(r => <option key={r} value={r}>{labelRole(r)}</option>)}
                                                 </select>
                                             )}
                                         </td>

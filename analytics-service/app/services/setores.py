@@ -1,39 +1,7 @@
 # app/services/setores.py
-from app.services.cascata import carregar_dados_consolidados
+from app.services.cascata import carregar_dados_consolidados, acao_pertence_ao_setor, SETORES_RADAR
 
-# Mapeamento dos 4 Macro-Setores e Subsetores do CETRAN-PA
-MACRO_SETORES_CONFIG = [
-    {
-        "nome": "Secretaria Executiva",
-        "tipo": "MACRO",
-        "aliases": ["Secretaria-Executiva", "Secretaria Executiva", "SEC", "ICETRAN", "CTSIST"],
-        "subsetores": ["ICETRAN", "CTSIST", "Secretaria-Executiva"]
-    },
-    {
-        "nome": "CTC - Câmara Temática de Coordenação",
-        "tipo": "COMISSAO",
-        "aliases": ["CTC", "Coordenação"],
-        "subsetores": []
-    },
-    {
-        "nome": "CTEDUC - Câmara Temática de Educação",
-        "tipo": "COMISSAO",
-        "aliases": ["CTEDUC", "Educação"],
-        "subsetores": []
-    },
-    {
-        "nome": "CTES - Câmara Temática de Esforço Legal e Fiscalização",
-        "tipo": "COMISSAO",
-        "aliases": ["CTES", "Fiscalização", "Esforço Legal"],
-        "subsetores": []
-    },
-    {
-        "nome": "Presidência do Cetran",
-        "tipo": "DIRECAO",
-        "aliases": ["Presidência do Cetran", "Presidência"],
-        "subsetores": []
-    }
-]
+MACRO_SETORES_CONFIG = SETORES_RADAR
 
 async def obter_distribuicao_setores(setor_selecionado: str = None):
     """
@@ -50,39 +18,44 @@ async def obter_distribuicao_setores(setor_selecionado: str = None):
             s_clean = s.strip()
             if not s_clean:
                 continue
-            if s_clean not in setores_map:
-                setores_map[s_clean] = {
-                    "setor": s_clean,
-                    "acoes": []
-                }
-            setores_map[s_clean]["acoes"].append(a)
+            setores_map.setdefault(s_clean, []).append(a)
+
+    def montar_item(chave, rotulo, pai, acoes_setor):
+        total = len(acoes_setor)
+        return {
+            "setor": chave,
+            "rotulo": rotulo,
+            "pai": pai,
+            "progresso": round(sum(a["progresso"] for a in acoes_setor) / total) if total > 0 else 0,
+            "totalAcoes": total,
+            "acoesConcluidas": sum(1 for a in acoes_setor if a["progresso"] == 100),
+            "acoesEmAndamento": sum(1 for a in acoes_setor if 0 < a["progresso"] < 100),
+            "acoesNaoIniciadas": sum(1 for a in acoes_setor if a["progresso"] == 0)
+        }
 
     resultado_setores = []
-    for s_nome, s_info in setores_map.items():
-        acoes_setor = s_info["acoes"]
-        total = len(acoes_setor)
-        progresso = round(sum(a["progresso"] for a in acoes_setor) / total) if total > 0 else 0
-        concluidas = sum(1 for a in acoes_setor if a["progresso"] == 100)
-        em_andamento = sum(1 for a in acoes_setor if 0 < a["progresso"] < 100)
-        nao_iniciadas = sum(1 for a in acoes_setor if a["progresso"] == 0)
+    for cfg in SETORES_RADAR:
+        chave = cfg["chave"]
+        acoes_setor = list(setores_map.get(chave, []))
+        # A Secretaria-Executiva consolida também as ações dos seus núcleos.
+        for filho in SETORES_RADAR:
+            if filho["pai"] == chave:
+                for a in setores_map.get(filho["chave"], []):
+                    if a not in acoes_setor:
+                        acoes_setor.append(a)
+        resultado_setores.append(montar_item(chave, cfg["rotulo"], cfg["pai"], acoes_setor))
 
-        resultado_setores.append({
-            "setor": s_nome,
-            "progresso": progresso,
-            "totalAcoes": total,
-            "acoesConcluidas": concluidas,
-            "acoesEmAndamento": em_andamento,
-            "acoesNaoIniciadas": nao_iniciadas
-        })
+    # Setores fora da lista oficial (ex: "Não Classificado") continuam visíveis.
+    oficiais = {cfg["chave"] for cfg in SETORES_RADAR}
+    for chave, acoes_setor in setores_map.items():
+        if chave not in oficiais:
+            resultado_setores.append(montar_item(chave, chave, None, acoes_setor))
 
-    # Ordena setores por total de ações decrescente
-    resultado_setores.sort(key=lambda x: (x["totalAcoes"], x["progresso"]), reverse=True)
 
     # Detalhamento do setor selecionado para a "Lente de Setor"
     detalhes_lente = None
     if setor_selecionado:
-        setor_upper = setor_selecionado.upper()
-        acoes_lente = [a for a in acoes if any(setor_upper in s.upper() for s in a["setores"])]
+        acoes_lente = [a for a in acoes if acao_pertence_ao_setor(a, setor_selecionado)]
         
         if acoes_lente:
             total_lente = len(acoes_lente)

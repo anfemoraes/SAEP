@@ -96,7 +96,7 @@ export function RecuperarSenha({ onVoltar, tokenInicial = '' }) {
                 <p style={{ color: '#64748b', fontSize: '0.88rem', margin: 0 }}>
                     {etapa === 'email'
                         ? 'Informe seu e-mail para receber o link seguro de acesso.'
-                        : 'Defina uma senha segura para acessar o SAEP.'}
+                        : 'Defina uma senha segura para acessar o Radar 2030.'}
                 </p>
             </div>
 

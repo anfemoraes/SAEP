@@ -7,17 +7,12 @@ import {
     alternarProjetoEstrategico
 } from '../services/analytics';
 import { ehAdmin } from '../services/permissoes';
+import { SETORES_RADAR } from '../services/progresso';
 import Swal from 'sweetalert2';
 
 const SETORES_OPCOES = [
     { valor: '', rotulo: 'Todos os Setores (Visão Geral)' },
-    { valor: 'Secretaria-Executiva', rotulo: 'Secretaria-Executiva' },
-    { valor: 'CTC', rotulo: 'CTC - Câmara Temática de Coordenação' },
-    { valor: 'CTEDUC', rotulo: 'CTEDUC - Câmara Temática de Educação' },
-    { valor: 'CTES', rotulo: 'CTES - Esforço Legal e Fiscalização' },
-    { valor: 'ICETRAN', rotulo: 'ICETRAN ' },
-    { valor: 'CTSIST', rotulo: 'CTSIST ' },
-    { valor: 'Presidência do Cetran', rotulo: 'Presidência do CETRAN' }
+    ...SETORES_RADAR.map(s => ({ valor: s.chave, rotulo: s.pai ? `\u00A0\u00A0${s.rotulo}` : s.rotulo }))
 ];
 
 export function DashboardEstrategico({ usuarioLogado }) {
@@ -157,7 +152,7 @@ export function DashboardEstrategico({ usuarioLogado }) {
                         Dashboard Estratégico
                     </h1>
                     <p style={{ margin: 0, color: '#64748b', fontSize: '0.95rem' }}>
-                        Monitoramento em cascata do plano estratégico consolidado a partir das matrizes aprovadas pelo Comitê.
+                        Monitoramento em cascata do plano estratégico consolidado a partir das matrizes aprovadas pelo Comitê Gestor.
                     </p>
                 </div>
 
@@ -614,6 +609,7 @@ export function DashboardEstrategico({ usuarioLogado }) {
                                                                             <li key={etapa.id} style={{ marginBottom: '4px', color: etapa.concluida ? '#166534' : '#475569' }}>
                                                                                 <i className={`bi ${etapa.concluida ? 'bi-check-circle-fill' : 'bi-circle'}`} aria-hidden="true" style={{ marginRight: '6px' }}></i>
                                                                                 {etapa.titulo}
+                                                                                {etapa.totalTarefas > 0 && <span style={{ color: '#94a3b8' }}> ({etapa.tarefasConcluidas}/{etapa.totalTarefas} tarefas)</span>}
                                                                             </li>
                                                                         ))}
                                                                     </ul>
@@ -665,7 +661,7 @@ export function DashboardEstrategico({ usuarioLogado }) {
                                     >
                                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
                                             <h4 style={{ margin: 0, fontSize: '1.05rem', color: '#0f172a', fontWeight: 700 }}>
-                                                {s.setor}
+                                                {s.rotulo || s.setor}
                                             </h4>
                                             <span style={{ fontSize: '1.3rem', fontWeight: 800, color: s.progresso >= 70 ? '#16a34a' : (s.progresso >= 40 ? '#d97706' : '#2563eb') }}>
                                                 {s.progresso}%

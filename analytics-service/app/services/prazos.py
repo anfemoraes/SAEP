@@ -1,4 +1,5 @@
 # app/services/prazos.py
+from app.services.cascata import acao_pertence_ao_setor
 from app.services.cascata import carregar_dados_consolidados
 
 HORIZONTES_INFO = {
@@ -30,8 +31,7 @@ async def obter_distribuicao_prazos(horizonte_filtro: str = None, setor_filtro: 
     acoes = await carregar_dados_consolidados()
 
     if setor_filtro:
-        setor_upper = setor_filtro.upper()
-        acoes = [a for a in acoes if any(setor_upper in s.upper() for s in a["setores"])]
+        acoes = [a for a in acoes if acao_pertence_ao_setor(a, setor_filtro)]
 
     por_horizonte = {"CURTO": [], "MEDIO": [], "LONGO": []}
     for a in acoes:

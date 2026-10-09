@@ -1,38 +1,114 @@
 # app/services/cascata.py
 import json
+import re
+import unicodedata
 from app.database.connection import get_db_connection
 
-# Mapeamento oficial dos 4 Eixos do PETRANS
+# Mapeamento oficial dos 4 Eixos (Radar 2030)
 EIXOS_INFO = {
     1: {
         "id": 1,
         "codigo": "EIXO 1",
-        "nome": "Governança, Integração e Gestão Estratégica",
-        "sigla": "GIG",
+        "nome": "Integração",
+        "sigla": "INT",
         "cor": "#2563eb"
     },
     2: {
         "id": 2,
         "codigo": "EIXO 2",
-        "nome": "Educação, Capacitação e Cidadania no Trânsito",
-        "sigla": "ECC",
+        "nome": "Inteligência de dados e Comunicação",
+        "sigla": "IDC",
         "cor": "#16a34a"
     },
     3: {
         "id": 3,
         "codigo": "EIXO 3",
-        "nome": "Fiscalização, Segurança Viária e Operações Integradas",
-        "sigla": "FSO",
+        "nome": "Gestão e Fiscalização",
+        "sigla": "GF",
         "cor": "#d97706"
     },
     4: {
         "id": 4,
         "codigo": "EIXO 4",
-        "nome": "Sustentabilidade, Tecnologia, Inteligência e Infraestrutura",
-        "sigla": "STI",
+        "nome": "Cultura e Educação",
+        "sigla": "CE",
         "cor": "#7c3aed"
     }
 }
+
+# Projetos por Eixo, conforme a Nota para Ratificação (Radar 2030).
+# O eixo da ação passa a ser definido pelo projeto a que ela pertence.
+PROJETOS_POR_EIXO = {
+    1: [1, 2, 11, 14, 18, 21],
+    2: [3, 4, 10, 13],
+    3: [5, 6, 7, 12, 15, 17, 19, 20],
+    4: [8, 9, 16],
+}
+EIXO_POR_PROJETO = {p: eixo for eixo, projetos in PROJETOS_POR_EIXO.items() for p in projetos}
+
+def eixo_do_projeto(projeto_codigo):
+    """Retorna o número do eixo do projeto (ex: 'PROJETO 02' -> 1) ou None."""
+    m = re.search(r"(\d+)", projeto_codigo or "")
+    return EIXO_POR_PROJETO.get(int(m.group(1))) if m else None
+
+# Setores do Radar 2030. Os núcleos pertencem à Secretaria-Executiva.
+SETORES_RADAR = [
+    {"chave": "Presidência", "rotulo": "Presidência", "pai": None},
+    {"chave": "Secretaria-Executiva", "rotulo": "Secretaria-Executiva", "pai": None},
+    {"chave": "Núcleo Administrativo", "rotulo": "Núcleo Administrativo", "pai": "Secretaria-Executiva"},
+    {"chave": "Núcleo Recursos", "rotulo": "Núcleo Recursos", "pai": "Secretaria-Executiva"},
+    {"chave": "Núcleo GeoCetran", "rotulo": "Núcleo GeoCetran", "pai": "Secretaria-Executiva"},
+    {"chave": "Núcleo ICetran", "rotulo": "Núcleo ICetran", "pai": "Secretaria-Executiva"},
+    {"chave": "Núcleo JusCetran", "rotulo": "Núcleo JusCetran", "pai": "Secretaria-Executiva"},
+    {"chave": "CTSEG", "rotulo": "CTSEG - Comissão Temática de Segurança Viária", "pai": None},
+    {"chave": "CTSIST", "rotulo": "CTSIST - Comissão Temática de Sistema de Trânsito", "pai": None},
+    {"chave": "CTEDUC", "rotulo": "CTEDUC - Comissão Temática de Educação para o Trânsito", "pai": None},
+]
+
+_ALIASES_SETOR = {
+    "presidencia": "Presidência",
+    "presidencia do cetran": "Presidência",
+    "secretaria executiva": "Secretaria-Executiva",
+    "secretaria nexecutiva": "Secretaria-Executiva",
+    "sec exec": "Secretaria-Executiva",
+    "secexec": "Secretaria-Executiva",
+    "nucleo administrativo": "Núcleo Administrativo",
+    "nucleo recursos": "Núcleo Recursos",
+    "nucleo geocetran": "Núcleo GeoCetran",
+    "geocetran": "Núcleo GeoCetran",
+    "nucleo icetran": "Núcleo ICetran",
+    "icetran": "Núcleo ICetran",
+    "nucleo juscetran": "Núcleo JusCetran",
+    "juscetran": "Núcleo JusCetran",
+    "ctseg": "CTSEG",
+    "ctsist": "CTSIST",
+    "cteduc": "CTEDUC",
+}
+
+def normalizar_setor(texto):
+    """Converte variações de escrita para o nome oficial do setor; desconhecidos ficam como estão."""
+    original = (texto or "").strip()
+    if not original:
+        return original
+    sem_acento = unicodedata.normalize("NFKD", original).encode("ascii", "ignore").decode()
+    chave = re.sub(r"[^a-z0-9]+", " ", sem_acento.lower()).strip()
+    return _ALIASES_SETOR.get(chave, original)
+
+def setores_do_grupo(setor):
+    """O setor e, se for a Secretaria-Executiva, também os seus núcleos."""
+    chave = normalizar_setor(setor)
+    return {chave} | {s["chave"] for s in SETORES_RADAR if s["pai"] == chave}
+
+def acao_pertence_ao_setor(acao, setor_selecionado):
+    """Filtro da Lente de Setor. A Secretaria-Executiva inclui as ações dos seus núcleos."""
+    if any(s in setores_do_grupo(setor_selecionado) for s in acao["setores"]):
+        return True
+    # Seleção fora da lista oficial: mantém a busca por trecho do nome.
+    chave = normalizar_setor(setor_selecionado)
+    if any(c["chave"] == chave for c in SETORES_RADAR):
+        return False
+    texto = (setor_selecionado or "").strip().upper()
+    return bool(texto) and any(texto in s.upper() for s in acao["setores"])
 
 # Os 8 Projetos Estratégicos Estruturantes padrão do PETRANS (ponto de partida)
 PROJETOS_ESTRATEGICOS_PADRAO = {
@@ -136,45 +212,58 @@ def normalizar_prazo(prazo: str) -> str:
         return "LONGO"
     return "CURTO"
 
-def calcular_percentual_etapas(etapas_raw) -> int:
-    """Calcula o percentual de conclusão das etapas de uma ação."""
-    if not etapas_raw:
-        return 0
-    
-    etapas = etapas_raw
-    if isinstance(etapas_raw, str):
-        try:
-            etapas = json.loads(etapas_raw)
-        except Exception:
-            return 0
-            
-    if not isinstance(etapas, list) or len(etapas) == 0:
-        return 0
-        
-    concluidas = sum(1 for e in etapas if isinstance(e, dict) and e.get("concluida") is True)
-    return round((concluidas / len(etapas)) * 100)
-
-def normalizar_etapas(etapas_raw):
-    """Retorna os passos da matriz em um formato seguro para a API."""
+def _carregar_lista_etapas(etapas_raw):
+    """Converte o JSON de etapas (lista ou string) em lista de dicts."""
     etapas = etapas_raw
     if isinstance(etapas_raw, str):
         try:
             etapas = json.loads(etapas_raw)
         except Exception:
             return []
-
     if not isinstance(etapas, list):
         return []
+    return [e for e in etapas if isinstance(e, dict)]
 
-    return [
-        {
+def _tarefas_da_etapa(etapa):
+    tarefas = etapa.get("tarefas")
+    if not isinstance(tarefas, list):
+        return []
+    return [t for t in tarefas if isinstance(t, dict)]
+
+def calcular_percentual_etapa(etapa) -> int:
+    """
+    Percentual de uma etapa: tarefas concluídas / total de tarefas.
+    Etapas legadas (sem tarefas) contam 0% ou 100% pelo campo "concluida".
+    """
+    tarefas = _tarefas_da_etapa(etapa)
+    if tarefas:
+        concluidas = sum(1 for t in tarefas if t.get("concluida") is True)
+        return round((concluidas / len(tarefas)) * 100)
+    return 100 if etapa.get("concluida") is True else 0
+
+def calcular_percentual_etapas(etapas_raw) -> int:
+    """Percentual de uma ação: média simples do percentual de suas etapas."""
+    etapas = _carregar_lista_etapas(etapas_raw)
+    if not etapas:
+        return 0
+    return round(sum(calcular_percentual_etapa(e) for e in etapas) / len(etapas))
+
+def normalizar_etapas(etapas_raw):
+    """Retorna as etapas (com contagem de tarefas) em um formato seguro para a API."""
+    resultado = []
+    for indice, etapa in enumerate(_carregar_lista_etapas(etapas_raw)):
+        tarefas = _tarefas_da_etapa(etapa)
+        percentual = calcular_percentual_etapa(etapa)
+        resultado.append({
             "id": etapa.get("id") or f"etapa-{indice}",
             "titulo": etapa.get("titulo") or f"Etapa {indice + 1}",
-            "concluida": etapa.get("concluida") is True
-        }
-        for indice, etapa in enumerate(etapas)
-        if isinstance(etapa, dict)
-    ]
+            "impacto": etapa.get("impacto"),
+            "totalTarefas": len(tarefas),
+            "tarefasConcluidas": sum(1 for t in tarefas if t.get("concluida") is True),
+            "percentual": percentual,
+            "concluida": percentual == 100
+        })
+    return resultado
 
 async def carregar_dados_consolidados():
     """
@@ -223,13 +312,18 @@ async def carregar_dados_consolidados():
         for a in acoes_db:
             acao_id = a["id"]
             progresso = percentual_por_acao.get(acao_id, 0)
-            eixo_num = extrair_numero_eixo(a["og"], a["lae"])
+            proj_cod_eixo = a["projetoCodigo"]
+            eixo_num = eixo_do_projeto(proj_cod_eixo) or extrair_numero_eixo(a["og"], a["lae"])
             prazo_norm = normalizar_prazo(a["prazo"])
             proj_cod = a["projetoCodigo"] or "SEM_PROJETO"
             proj_nome = a["projetoNome"] or proj_cod
             
             # Divide múltiplos setores se houver vírgula
-            setores_lista = [s.strip() for s in (a["setor"] or "").split(",") if s.strip()]
+            setores_lista = []
+            for s in (a["setor"] or "").split(","):
+                nome_setor = normalizar_setor(s)
+                if nome_setor and nome_setor not in setores_lista:
+                    setores_lista.append(nome_setor)
             if not setores_lista:
                 setores_lista = ["Não Classificado"]
 
