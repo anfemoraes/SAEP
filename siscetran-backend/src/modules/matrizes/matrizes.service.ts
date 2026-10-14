@@ -242,23 +242,40 @@ export class MatrizesService {
 
     const { acoes, ...dados } = updateMatrizDto;
 
+    // Valida tudo ANTES de mexer no banco: se algo estiver errado, nada é apagado.
     let acoesUpdate:
       | { create: { acaoId: string; etapas: Prisma.InputJsonValue }[] }
       | undefined = undefined;
     if (acoes) {
-      await this.prisma.acoesMatriz.deleteMany({ where: { matrizId: id } });
-      acoesUpdate = {
-        create: acoes.map((a) => ({
-          acaoId: a.acaoId,
-          etapas: validarEtapas(a.etapas) as Prisma.InputJsonValue,
-        })),
-      };
+      const novas = acoes.map((a) => ({
+        acaoId: a.acaoId,
+        etapas: validarEtapas(a.etapas) as Prisma.InputJsonValue,
+      }));
+
+      const ids = [...new Set(novas.map((a) => a.acaoId))];
+      if (ids.length > 0) {
+        const existentes = await this.prisma.acao.count({
+          where: { id: { in: ids } },
+        });
+        if (existentes !== ids.length) {
+          throw new BadRequestException('Uma ou mais ações não existem');
+        }
+      }
+
+      acoesUpdate = { create: novas };
     }
 
-    const matrizAtualizada = await this.prisma.matriz.update({
-      where: { id },
-      data: { ...dados, acoes: acoesUpdate },
-      include: this.includeCompleto,
+    // Apagar as ações antigas e gravar as novas na mesma transação: se a gravação
+    // falhar, a matriz continua com as ações que já tinha.
+    const matrizAtualizada = await this.prisma.$transaction(async (tx) => {
+      if (acoesUpdate) {
+        await tx.acoesMatriz.deleteMany({ where: { matrizId: id } });
+      }
+      return tx.matriz.update({
+        where: { id },
+        data: { ...dados, acoes: acoesUpdate },
+        include: this.includeCompleto,
+      });
     });
 
     await this.logsService.create({

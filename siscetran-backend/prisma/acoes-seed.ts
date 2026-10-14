@@ -511,6 +511,14 @@ export const acoesFrontend: AcaoFrontend[] = [
     responsavel: "GeoCetran",
   },
   {
+    id: "AE 2.2.1.10B",
+    diretriz: "Estruturar equipe multidisciplinar com expertise em ciência de dados, IA e segurança viária.",
+    prazo: "Médio",
+    meta: "Equipe multidisciplinar para IA e segurança viária estruturada e em operação até o final de 2028.",
+    indicador: "% de efetivação da equipe multidisciplinar.",
+    responsavel: "Secretaria-Executiva",
+  },
+  {
     id: "AE 2.2.1.11",
     diretriz: "Criar painel geral de indicadores de qualidade no trânsito e manter atualizado o mapeamento de municípios que mais impactam na sinistralidade.",
     prazo: "Médio",
@@ -924,6 +932,14 @@ export const acoesFrontend: AcaoFrontend[] = [
     prazo: "Médio",
     meta: "Plano de Cargos, Carreiras e Salários elaborado e implementado.",
     indicador: "Elaboração e implementação do Plano de Cargos, Carreiras e Salários.",
+    responsavel: "Secretaria-Executiva",
+  },
+  {
+    id: "AE 3.5.2.3",
+    diretriz: "Elaborar Manuais de procedimentos de forma faseada, contemplando processos da rotina administrativa e de atividades finalísticas do Conselho.",
+    prazo: "Curto",
+    meta: "50% Manuais de rotinas administrativas implementados até o final de 2026 e 100% até o final de 2027 e 50% de atividades finalísticas até final de 2027 e 100% até final de 2028.",
+    indicador: "% de manuais de procedimentos implementados.",
     responsavel: "Secretaria-Executiva",
   },
   {
